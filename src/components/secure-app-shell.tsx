@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -52,28 +53,35 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       }
     });
     
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const isAssessmentInProgress = localStorage.getItem("assessmentInProgress");
-      if (isAssessmentInProgress === "true") {
-        e.preventDefault();
-        e.returnValue = "Você tem uma avaliação em andamento. Sair desta página pode resultar em perda de progresso.";
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    // Apenas configurar o listener de beforeunload se estiver em uma rota de avaliação
+    if (isAssessmentRoute) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        const isAssessmentInProgress = localStorage.getItem("assessmentInProgress");
+        if (isAssessmentInProgress === "true") {
+          e.preventDefault();
+          e.returnValue = "Você tem uma avaliação em andamento. Sair desta página pode resultar em perda de progresso.";
+          return e.returnValue;
+        }
+      };
+      
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      
+      return () => {
+        subscription.unsubscribe();
+        window.removeEventListener("beforeunload", handleBeforeUnload);
+      };
+    }
     
     return () => {
       subscription.unsubscribe();
-      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [navigate]);
+  }, [navigate, isAssessmentRoute]);
   
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
       
-      if (isAssessmentInProgress) {
+      if (isAssessmentInProgress && isAssessmentRoute) {
         if ((e.ctrlKey || e.metaKey) && 
             (e.key === "c" || e.key === "v" || e.key === "x" || 
              e.key === "p" || e.key === "s" || e.key === "a")) {
@@ -123,7 +131,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     const handleContextMenu = (e: MouseEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
       
-      if (isAssessmentInProgress) {
+      if (isAssessmentInProgress && isAssessmentRoute) {
         e.preventDefault();
         toast({
           title: "Ação Bloqueada",
@@ -146,9 +154,8 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
   }, [toast, isAssessmentRoute]);
   
   const handleLogout = async () => {
-    const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
-    
-    if (isAssessmentInProgress) {
+    // Verificar se estamos na rota de avaliação
+    if (isAssessmentRoute && localStorage.getItem("assessmentInProgress") === "true") {
       toast({
         title: "Avaliação em andamento",
         description: "Você não pode sair enquanto uma avaliação está em andamento.",
@@ -157,6 +164,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       return;
     }
     
+    // Sempre garantir que as proteções estão desativadas ao sair
     disableAssessmentProtection();
     
     await supabase.auth.signOut();

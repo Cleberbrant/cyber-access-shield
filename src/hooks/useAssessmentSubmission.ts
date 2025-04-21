@@ -96,8 +96,23 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
     }
   };
 
+  // Função para cancelar a avaliação atual
+  const cancelAssessment = () => {
+    // Desativar proteções ao cancelar
+    disableAssessmentProtection();
+    
+    // Redirecionar para o dashboard
+    navigate("/dashboard");
+    
+    toast({
+      title: "Avaliação cancelada",
+      description: "Você saiu da avaliação e suas respostas não foram salvas."
+    });
+  };
+
   return {
     isSubmitting,
-    handleSubmitAssessment
+    handleSubmitAssessment,
+    cancelAssessment
   };
 }

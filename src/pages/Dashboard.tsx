@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Clock, Calendar, Plus, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { isAdmin, updateAdminStatus } from "@/utils/secure-utils";
+import { isAdmin, updateAdminStatus, disableAssessmentProtection } from "@/utils/secure-utils";
 
 interface Assessment {
   id: string;
@@ -34,6 +34,9 @@ export default function Dashboard() {
   const [isUserAdmin, setIsUserAdmin] = useState(false);
   
   useEffect(() => {
+    // Garantir que qualquer proteção ativa seja removida ao acessar o Dashboard
+    disableAssessmentProtection();
+    
     const fetchData = async () => {
       try {
         // Verificar se o usuário é admin
