@@ -44,6 +44,15 @@ interface Question {
   }[];
 }
 
+interface QuestionOptions {
+  options?: string[];
+  code?: string;
+  matches?: {
+    left: string;
+    right: string;
+  }[];
+}
+
 export default function CreateAssessmentPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,13 +121,15 @@ export default function CreateAssessmentPage() {
             };
             
             if (q.options) {
-              if (q.question_type === "multiple_choice") {
-                question.options = q.options.options;
+              const optionsObj = q.options as unknown as QuestionOptions;
+              
+              if (q.question_type === "multiple_choice" && optionsObj.options) {
+                question.options = optionsObj.options;
                 question.correctAnswer = q.correct_answer !== null ? parseInt(q.correct_answer) : 0;
               } else if (q.question_type === "true_false") {
                 question.correctAnswer = q.correct_answer === "true";
-              } else if (q.question_type === "matching") {
-                question.matches = q.options.matches;
+              } else if (q.question_type === "matching" && optionsObj.matches) {
+                question.matches = optionsObj.matches;
               }
             }
             
@@ -127,7 +138,8 @@ export default function CreateAssessmentPage() {
             }
             
             if (q.question_type === "code") {
-              question.code = q.options?.code || "";
+              const codeObj = q.options as unknown as QuestionOptions;
+              question.code = codeObj.code || "";
               question.correctAnswer = q.correct_answer || "";
             }
             
