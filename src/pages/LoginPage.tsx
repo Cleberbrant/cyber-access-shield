@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { ensureJavaScriptEnabled } from "@/utils/secure-utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -14,11 +15,15 @@ export default function LoginPage() {
     // Verificar se o JavaScript está habilitado
     ensureJavaScriptEnabled();
     
-    // Verificar se o usuário já está autenticado
-    const user = localStorage.getItem("user");
-    if (user) {
-      navigate("/dashboard");
-    }
+    // Verificar se o usuário já está autenticado usando Supabase
+    const checkAuthStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/dashboard");
+      }
+    };
+    
+    checkAuthStatus();
   }, [navigate]);
   
   return (
