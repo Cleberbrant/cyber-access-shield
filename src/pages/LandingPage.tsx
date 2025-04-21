@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -14,7 +13,7 @@ export default function LandingPage() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-cyber-blue" />
-            <span className="font-bold text-xl">CyberAssessShield</span>
+            <span className="font-bold text-xl">CyberAccessShield</span>
           </div>
           <div className="flex items-center gap-4">
             <nav className="hidden md:flex items-center gap-6">
@@ -229,7 +228,7 @@ export default function LandingPage() {
       <footer className="border-t py-6 md:py-0">
         <div className="container flex flex-col md:h-24 md:flex-row md:items-center md:justify-between">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            &copy; {new Date().getFullYear()} CyberAssessShield. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
           </p>
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             Desenvolvido como projeto de TCC em Engenharia de Software
