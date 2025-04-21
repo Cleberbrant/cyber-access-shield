@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +16,6 @@ import { useAssessmentLoader } from "@/hooks/useAssessmentLoader";
 import { useAssessmentTimer } from "@/hooks/useAssessmentTimer";
 import { useAssessmentAnswers } from "@/hooks/useAssessmentAnswers";
 import { useAssessmentSubmission } from "@/hooks/useAssessmentSubmission";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 
 export default function AssessmentPage() {
   const { assessmentId } = useParams();
