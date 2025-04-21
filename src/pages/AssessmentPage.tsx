@@ -12,10 +12,12 @@ import { Separator } from "@/components/ui/separator";
 import { 
   enableAssessmentProtection, 
   disableAssessmentProtection,
-  preventNavigation
+  preventNavigation,
+  sanitizeInput
 } from "@/utils/secure-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Clock, ArrowLeft, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Tipos
 interface AssessmentQuestion {
@@ -35,69 +37,6 @@ interface Assessment {
   questions: AssessmentQuestion[];
 }
 
-// Dados de exemplo para simulação
-const demoAssessment: Assessment = {
-  id: "1",
-  title: "Fundamentos de Segurança Web",
-  description: "Avaliação sobre conceitos básicos de segurança na web, incluindo XSS, CSRF e SQL Injection.",
-  duration: 45,
-  questions: [
-    {
-      id: "q1",
-      type: "multiple-choice",
-      text: "Qual das seguintes não é uma técnica adequada para prevenção de ataques XSS?",
-      options: [
-        "Sanitizar entradas do usuário",
-        "Usar a propriedade innerHTML para renderizar conteúdo dinâmico",
-        "Implementar Content Security Policy (CSP)",
-        "Escapar caracteres especiais em dados dinâmicos"
-      ]
-    },
-    {
-      id: "q2",
-      type: "true-false",
-      text: "SQL Injection pode ser completamente prevenido usando apenas validação do lado do cliente."
-    },
-    {
-      id: "q3",
-      type: "multiple-choice",
-      text: "Qual das seguintes técnicas é mais eficaz para prevenir ataques CSRF?",
-      options: [
-        "Usar cookies HttpOnly",
-        "Implementar tokens anti-CSRF",
-        "Desabilitar JavaScript no navegador",
-        "Usar apenas métodos HTTP GET para operações sensíveis"
-      ]
-    },
-    {
-      id: "q4",
-      type: "short-answer",
-      text: "Explique brevemente o conceito de Same-Origin Policy e sua importância para a segurança web."
-    },
-    {
-      id: "q5",
-      type: "code",
-      text: "Identifique e corrija a vulnerabilidade de SQL Injection no seguinte código:",
-      code: `function getUserData(userId) {
-  // AVISO: Este código contém vulnerabilidade
-  const query = "SELECT * FROM users WHERE id = " + userId;
-  return db.execute(query);
-}`
-    },
-    {
-      id: "q6",
-      type: "matching",
-      text: "Relacione os conceitos de segurança com suas descrições:",
-      matches: [
-        { left: "XSS", right: "Injeção de scripts maliciosos em páginas web" },
-        { left: "CSRF", right: "Execução não autorizada de ações em nome do usuário" },
-        { left: "SQLi", right: "Manipulação de consultas de banco de dados" },
-        { left: "CORS", right: "Mecanismo de controle de acesso entre origens" }
-      ]
-    }
-  ]
-};
-
 // Componente principal
 export default function AssessmentPage() {
   const navigate = useNavigate();
@@ -112,24 +51,103 @@ export default function AssessmentPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [matchPairs, setMatchPairs] = useState<Record<string, string>>({});
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Carregar a avaliação
+  // Carregar a avaliação do Supabase
   useEffect(() => {
     const fetchAssessment = async () => {
+      if (!assessmentId) {
+        toast({
+          title: "Erro",
+          description: "ID da avaliação não encontrado.",
+          variant: "destructive"
+        });
+        navigate("/dashboard");
+        return;
+      }
+
       try {
         setLoading(true);
         
-        // Simulando uma chamada de API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Buscar dados da avaliação
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from("assessments")
+          .select("*")
+          .eq("id", assessmentId)
+          .single();
+          
+        if (assessmentError || !assessmentData) {
+          throw new Error(assessmentError?.message || "Avaliação não encontrada");
+        }
+
+        // Buscar questões da avaliação
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("questions")
+          .select("*")
+          .eq("assessment_id", assessmentId)
+          .order("order_index");
+          
+        if (questionsError) {
+          throw new Error(questionsError.message || "Erro ao carregar questões");
+        }
+
+        // Converter dados para o formato esperado pelo componente
+        const formattedQuestions: AssessmentQuestion[] = questionsData.map(q => {
+          let question: AssessmentQuestion = {
+            id: q.id,
+            text: q.question_text,
+            type: mapQuestionType(q.question_type)
+          };
+
+          if (q.options) {
+            if (q.question_type === "multiple_choice" && q.options.options) {
+              question.options = q.options.options;
+            } else if (q.question_type === "code" && q.options.code) {
+              question.code = q.options.code;
+            } else if (q.question_type === "matching" && q.options.matches) {
+              question.matches = q.options.matches;
+            }
+          }
+
+          return question;
+        });
+
+        const mappedAssessment: Assessment = {
+          id: assessmentData.id,
+          title: assessmentData.title,
+          description: assessmentData.description || "",
+          duration: assessmentData.duration_minutes,
+          questions: formattedQuestions
+        };
         
-        // Usar dados de exemplo para simulação
-        setAssessment(demoAssessment);
-        setTimeLeft(demoAssessment.duration * 60); // Converter minutos para segundos
-      } catch (error) {
+        setAssessment(mappedAssessment);
+        setTimeLeft(assessmentData.duration_minutes * 60); // Converter minutos para segundos
+        
+        // Criar uma sessão de avaliação
+        const { data: userSession } = await supabase.auth.getSession();
+        if (userSession && userSession.session) {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from("assessment_sessions")
+            .insert({
+              assessment_id: assessmentId,
+              user_id: userSession.session.user.id,
+              started_at: new Date().toISOString(),
+              is_completed: false
+            })
+            .select('id')
+            .single();
+            
+          if (sessionError) {
+            console.error("Erro ao criar sessão de avaliação:", sessionError);
+          } else if (sessionData) {
+            setSessionId(sessionData.id);
+          }
+        }
+      } catch (error: any) {
         console.error("Erro ao carregar avaliação:", error);
         toast({
           title: "Erro",
-          description: "Não foi possível carregar a avaliação.",
+          description: error.message || "Não foi possível carregar a avaliação.",
           variant: "destructive"
         });
         navigate("/dashboard");
@@ -141,6 +159,19 @@ export default function AssessmentPage() {
     fetchAssessment();
   }, [assessmentId, navigate, toast]);
   
+  // Helper para mapear tipos de questões do banco para o formato do componente
+  const mapQuestionType = (dbType: string): AssessmentQuestion["type"] => {
+    const typeMap: Record<string, AssessmentQuestion["type"]> = {
+      "multiple_choice": "multiple-choice",
+      "true_false": "true-false",
+      "text": "short-answer",
+      "code": "code",
+      "matching": "matching"
+    };
+    
+    return typeMap[dbType as keyof typeof typeMap] || "multiple-choice";
+  };
+
   // Configurar o cronômetro regressivo
   useEffect(() => {
     if (!assessment || timeLeft <= 0) return;
@@ -198,20 +229,55 @@ export default function AssessmentPage() {
   
   // Manipular as respostas
   const handleAnswerChange = (questionId: string, value: any) => {
+    // Sanitizar entradas para prevenir SQL Injection
+    const sanitizedValue = typeof value === 'string' ? sanitizeInput(value) : value;
+    
     setAnswers(prev => ({
       ...prev,
-      [questionId]: value
+      [questionId]: sanitizedValue
     }));
+    
+    // Salvar resposta no banco de dados
+    if (sessionId) {
+      saveAnswer(questionId, sanitizedValue);
+    }
+  };
+  
+  // Salvar resposta no banco de dados
+  const saveAnswer = async (questionId: string, answer: any) => {
+    if (!sessionId) return;
+    
+    try {
+      // Converter resposta para string (caso seja um objeto)
+      const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+      
+      // Usar upsert para criar ou atualizar a resposta
+      await supabase
+        .from("user_answers")
+        .upsert({
+          session_id: sessionId,
+          question_id: questionId,
+          answer: stringAnswer
+        }, {
+          onConflict: 'session_id,question_id'
+        });
+    } catch (error) {
+      console.error("Erro ao salvar resposta:", error);
+    }
   };
   
   const handleMatchPairChange = (questionId: string, leftItem: string, rightItem: string) => {
+    // Sanitizar entradas
+    const sanitizedLeftItem = sanitizeInput(leftItem);
+    const sanitizedRightItem = sanitizeInput(rightItem);
+    
     setMatchPairs(prev => ({
       ...prev,
-      [leftItem]: rightItem
+      [sanitizedLeftItem]: sanitizedRightItem
     }));
     
     // Atualizar as respostas com todos os pares atuais
-    const allPairs = { ...matchPairs, [leftItem]: rightItem };
+    const allPairs = { ...matchPairs, [sanitizedLeftItem]: sanitizedRightItem };
     handleAnswerChange(questionId, allPairs);
   };
   
@@ -236,8 +302,17 @@ export default function AssessmentPage() {
         }
       }
       
-      // Simular envio para o servidor
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (sessionId) {
+        // Atualizar sessão como completa
+        await supabase
+          .from("assessment_sessions")
+          .update({
+            is_completed: true,
+            completed_at: new Date().toISOString(),
+            // Aqui poderia calcular pontuação preliminar se necessário
+          })
+          .eq("id", sessionId);
+      }
       
       // Desativar proteções de segurança
       disableAssessmentProtection();
@@ -249,7 +324,7 @@ export default function AssessmentPage() {
         title: "Avaliação concluída",
         description: "Suas respostas foram enviadas com sucesso."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao enviar avaliação:", error);
       toast({
         title: "Erro",
