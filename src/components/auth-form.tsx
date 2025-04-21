@@ -1,15 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { EmailInput } from "./auth-form/EmailInput";
+import { PasswordInput } from "./auth-form/PasswordInput";
+import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
+import { AuthFormFooter } from "./auth-form/AuthFormFooter";
 
 // Esquema de validação para formulários
 const loginSchema = z.object({
@@ -124,34 +123,28 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleRegister = async () => {
     setIsLoading(true);
     try {
-      // Adiciona logs para depuração
       console.log("Iniciando registro com:", { email, password });
       
-      // Verificar se o email já está em uso usando uma consulta SELECT na tabela auth.users
-      // Como não podemos acessar diretamente a tabela auth.users, vamos tentar fazer login
-      // com o email para ver se o usuário já existe, sem criar um novo usuário
       const { error: emailCheckError } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: false // Esta opção é suportada pelo signInWithOtp
+          shouldCreateUser: false
         }
       });
       
-      // Se não houver erro específico indicando que o usuário não existe, assumimos que ele existe
       if (!emailCheckError || !emailCheckError.message.includes("Email not confirmed")) {
         console.log("Email já cadastrado:", email);
         throw new Error("Este email já está em uso. Por favor, tente outro email.");
       }
       
-      // Tenta registrar o usuário
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: email.split('@')[0], // Nome padrão baseado no email
+            full_name: email.split('@')[0],
             avatar_url: "",
-            is_admin: false // Por padrão, novos usuários não são administradores
+            is_admin: false
           }
         }
       });
@@ -162,7 +155,6 @@ export function AuthForm({ type, className }: AuthFormProps) {
         throw error;
       }
 
-      // Verifica se o usuário foi criado com sucesso
       if (data && data.user) {
         toast({
           title: "Registro bem-sucedido",
@@ -171,7 +163,6 @@ export function AuthForm({ type, className }: AuthFormProps) {
             : "Verifique seu email para confirmar o cadastro.",
         });
 
-        // Inserir o registro na tabela profiles
         if (data.user.id) {
           const { error: profileError } = await supabase
             .from('profiles')
@@ -189,11 +180,9 @@ export function AuthForm({ type, className }: AuthFormProps) {
           }
         }
 
-        // Se houver uma sessão ativa, significa que não precisa de confirmação de email
         if (data.session) {
           navigate("/dashboard");
         } else {
-          // Caso contrário, redireciona para a página de login
           navigate("/login");
         }
       } else {
@@ -220,10 +209,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
     e.preventDefault();
     setErrors({});
     
-    // Adiciona log para depuração
     console.log("Formulário enviado:", { type, email, password, confirmPassword });
     
-    // Validar o formulário
     if (!validateForm()) {
       console.log("Validação falhou, erros:", errors);
       return;
@@ -260,110 +247,32 @@ export function AuthForm({ type, className }: AuthFormProps) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="email"
-                placeholder="seu@email.com"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={cn(
-                  "pl-10",
-                  errors.email && "border-destructive focus-visible:ring-destructive"
-                )}
-                disabled={isLoading}
-                required
-              />
-            </div>
-            {errors.email && (
-              <p className="text-sm font-medium text-destructive">{errors.email}</p>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete={type === "login" ? "current-password" : "new-password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={cn(
-                  "pl-10",
-                  errors.password && "border-destructive focus-visible:ring-destructive"
-                )}
-                disabled={isLoading}
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                onClick={togglePasswordVisibility}
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <Eye className="h-4 w-4" aria-hidden="true" />
-                )}
-                <span className="sr-only">
-                  {showPassword ? "Ocultar senha" : "Mostrar senha"}
-                </span>
-              </Button>
-            </div>
-            {errors.password && (
-              <p className="text-sm font-medium text-destructive">{errors.password}</p>
-            )}
-          </div>
+          <EmailInput
+            email={email}
+            setEmail={setEmail}
+            error={errors.email}
+            disabled={isLoading}
+          />
+
+          <PasswordInput
+            password={password}
+            setPassword={setPassword}
+            showPassword={showPassword}
+            togglePasswordVisibility={togglePasswordVisibility}
+            error={errors.password}
+            disabled={isLoading}
+            autoComplete={type === "login" ? "current-password" : "new-password"}
+          />
 
           {type === "register" && (
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={cn(
-                    "pl-10",
-                    errors.confirmPassword && "border-destructive focus-visible:ring-destructive"
-                  )}
-                  disabled={isLoading}
-                  required
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
-                  onClick={toggleConfirmPasswordVisibility}
-                  disabled={isLoading}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  <span className="sr-only">
-                    {showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
-                  </span>
-                </Button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-sm font-medium text-destructive">{errors.confirmPassword}</p>
-              )}
-            </div>
+            <ConfirmPasswordInput
+              confirmPassword={confirmPassword}
+              setConfirmPassword={setConfirmPassword}
+              showConfirmPassword={showConfirmPassword}
+              toggleConfirmPasswordVisibility={toggleConfirmPasswordVisibility}
+              error={errors.confirmPassword}
+              disabled={isLoading}
+            />
           )}
 
           {errors.form && (
@@ -373,53 +282,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
           )}
         </CardContent>
         
-        <CardFooter className="flex flex-col space-y-4">
-          <Button
-            type="submit"
-            className="w-full cyber-button"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                <span className="ml-2">Aguarde...</span>
-              </div>
-            ) : type === "login" ? (
-              "Entrar"
-            ) : (
-              "Criar conta"
-            )}
-          </Button>
-          
-          <div className="text-center text-sm">
-            {type === "login" ? (
-              <p>
-                Não tem uma conta?{" "}
-                <Button 
-                  type="button"
-                  variant="link" 
-                  className="h-auto p-0 text-primary" 
-                  onClick={() => navigate("/register")}
-                  disabled={isLoading}
-                >
-                  Registre-se
-                </Button>
-              </p>
-            ) : (
-              <p>
-                Já tem uma conta?{" "}
-                <Button 
-                  type="button"
-                  variant="link" 
-                  className="h-auto p-0 text-primary" 
-                  onClick={() => navigate("/login")}
-                  disabled={isLoading}
-                >
-                  Entrar
-                </Button>
-              </p>
-            )}
-          </div>
+        <CardFooter>
+          <AuthFormFooter type={type} isLoading={isLoading} navigate={navigate} />
         </CardFooter>
       </form>
     </Card>
