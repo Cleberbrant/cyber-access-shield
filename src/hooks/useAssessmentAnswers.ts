@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { sanitizeInput } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +50,7 @@ export function useAssessmentAnswers(sessionId: string | null) {
   const handleAnswerChange = async (questionId: string, value: any) => {
     const sanitizedValue = typeof value === 'string' ? sanitizeInput(value) : value;
     
+    // Atualizar estado local primeiro
     setAnswers(prev => ({
       ...prev,
       [questionId]: sanitizedValue
@@ -78,45 +78,30 @@ export function useAssessmentAnswers(sessionId: string | null) {
     if (!sessionId) return;
     
     try {
-      const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
-      
-      // Primeiro, verificar se o usuário tem permissão e se a sessão existe
+      // Verificar sessão primeiro
       const { data: sessionData, error: sessionError } = await supabase
         .from("assessment_sessions")
-        .select("id, user_id")
+        .select("id, user_id, is_completed")
         .eq("id", sessionId)
         .single();
         
-      if (sessionError) {
-        console.error("Erro ao verificar sessão:", sessionError);
-        toast({
-          title: "Erro ao salvar resposta",
-          description: "Não foi possível verificar a sessão de avaliação.",
-          variant: "destructive"
-        });
-        return;
+      if (sessionError || !sessionData) {
+        throw new Error("Sessão não encontrada ou expirada");
       }
       
-      // Verificar se a sessão pertence ao usuário atual
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || session.user.id !== sessionData.user_id) {
-        toast({
-          title: "Erro de permissão",
-          description: "Você não tem permissão para responder esta avaliação.",
-          variant: "destructive"
-        });
-        return;
+      if (sessionData.is_completed) {
+        throw new Error("Esta avaliação já foi concluída");
       }
       
-      const answerData = {
-        session_id: sessionId,
-        question_id: questionId,
-        answer: stringAnswer
-      };
+      const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
       
       const { error } = await supabase
         .from("user_answers")
-        .upsert(answerData, {
+        .upsert({
+          session_id: sessionId,
+          question_id: questionId,
+          answer: stringAnswer
+        }, {
           onConflict: 'session_id,question_id'
         });
       
@@ -124,7 +109,7 @@ export function useAssessmentAnswers(sessionId: string | null) {
         console.error("Erro ao salvar resposta:", error);
         toast({
           title: "Erro ao salvar resposta",
-          description: error.message || "Não foi possível salvar sua resposta.",
+          description: "Suas alterações não foram salvas. Por favor, tente novamente.",
           variant: "destructive"
         });
       }
