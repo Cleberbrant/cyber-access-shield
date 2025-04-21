@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -8,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, CheckCircle, XCircle, FileText, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { ResultQuestionRenderer } from "@/components/assessment/ResultQuestionRenderer";
 
 interface AssessmentResult {
   id: string;
@@ -89,17 +89,37 @@ export default function AssessmentResultPage() {
           throw new Error("Nenhum resultado encontrado");
         }
 
+        console.log("Dados da sessão:", JSON.stringify(sessionData, null, 2));
+
         // Calcular pontuação e resultados
         const questionsResults = sessionData.user_answers.map((answer) => {
+          // Log para depuração - verificar os valores das respostas
+          console.log(`
+            Questão ID: ${answer.question.id}
+            Texto: ${answer.question.question_text}
+            Resposta do usuário: "${answer.answer}"
+            Resposta correta: "${answer.question.correct_answer}"
+            Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
+          `);
+          
           // Extrair a explicação do objeto options usando a função auxiliar
           const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
+          
+          // Verificar se a resposta está correta comparando diretamente
+          // Isso é para diagnóstico, vamos usar o valor do banco de dados para exibição
+          const matchesCorrectAnswer = 
+            answer.answer && 
+            answer.question.correct_answer && 
+            answer.answer.trim().toLowerCase() === answer.question.correct_answer.trim().toLowerCase();
+          
+          console.log(`Comparação direta de strings: ${matchesCorrectAnswer ? 'Igual' : 'Diferente'}`);
           
           return {
             id: answer.question.id,
             text: answer.question.question_text,
-            correct: answer.is_correct || false,
+            correct: answer.is_correct || false, // Usando o valor do banco de dados
             userAnswer: answer.answer || "Sem resposta",
-            correctAnswer: answer.question.correct_answer,
+            correctAnswer: answer.question.correct_answer || "",
             explanation: explanation
           };
         });
@@ -179,8 +199,8 @@ export default function AssessmentResultPage() {
         </Button>
         
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{result.title} - Resultado</h1>
-          <p className="text-muted-foreground">{result.description}</p>
+          <h1 className="text-3xl font-bold mb-2">{result?.title} - Resultado</h1>
+          <p className="text-muted-foreground">{result?.description}</p>
         </div>
         
         <div className="grid gap-6 lg:grid-cols-3 mb-8">
@@ -192,11 +212,11 @@ export default function AssessmentResultPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Resultado</span>
-                  <span className="font-bold">{result.score} de {result.maxScore} pontos</span>
+                  <span className="font-bold">{result?.score} de {result?.maxScore} pontos</span>
                 </div>
-                <Progress value={result.percentageScore} className="h-3" />
+                <Progress value={result?.percentageScore} className="h-3" />
                 <div className="flex justify-end mt-1 text-sm text-muted-foreground">
-                  {result.percentageScore}%
+                  {result?.percentageScore}%
                 </div>
               </div>
               
@@ -204,10 +224,10 @@ export default function AssessmentResultPage() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Conclusão</p>
                   <p className="text-sm text-muted-foreground">
-                    {result.percentageScore >= 70 ? "Aprovado" : "Reprovado"}
+                    {result?.percentageScore && result.percentageScore >= 70 ? "Aprovado" : "Reprovado"}
                   </p>
                 </div>
-                {result.percentageScore >= 70 ? (
+                {result?.percentageScore && result.percentageScore >= 70 ? (
                   <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center dark:bg-green-900/20">
                     <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
@@ -228,7 +248,7 @@ export default function AssessmentResultPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Data de conclusão</span>
                 <span className="text-sm font-medium">
-                  {new Date(result.completedAt).toLocaleDateString('pt-BR', {
+                  {result?.completedAt && new Date(result.completedAt).toLocaleDateString('pt-BR', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -240,7 +260,7 @@ export default function AssessmentResultPage() {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Questões corretas</span>
                 <span className="text-sm font-medium">
-                  {result.questionsResults.filter(q => q.correct).length} de {result.maxScore}
+                  {result?.score} de {result?.maxScore}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -256,53 +276,12 @@ export default function AssessmentResultPage() {
         <div className="space-y-6">
           <h2 className="text-2xl font-bold">Resumo das Questões</h2>
           
-          {result.questionsResults.map((question, index) => (
-            <Card key={question.id} className="overflow-hidden">
-              <div className={`h-1 ${question.correct ? 'bg-green-500' : 'bg-red-500'}`} />
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-base font-medium">Questão {index + 1}</CardTitle>
-                  {question.correct ? (
-                    <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                      Correta
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                      <XCircle className="h-3.5 w-3.5 mr-1" />
-                      Incorreta
-                    </span>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="py-3">
-                <p className="mb-3">{question.text}</p>
-                
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium">Sua resposta: </span>
-                    <span className={question.correct ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                      {question.userAnswer}
-                    </span>
-                  </div>
-                  
-                  {!question.correct && (
-                    <div>
-                      <span className="font-medium">Resposta correta: </span>
-                      <span className="text-green-600 dark:text-green-400">{question.correctAnswer}</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              {question.explanation && (
-                <CardFooter className="bg-muted/50 pt-3 pb-3">
-                  <div className="text-sm">
-                    <span className="font-medium">Explicação: </span>
-                    <span className="text-muted-foreground">{question.explanation}</span>
-                  </div>
-                </CardFooter>
-              )}
-            </Card>
+          {result?.questionsResults.map((question, index) => (
+            <ResultQuestionRenderer 
+              key={question.id} 
+              index={index} 
+              question={question} 
+            />
           ))}
         </div>
         
@@ -310,7 +289,7 @@ export default function AssessmentResultPage() {
           <Button 
             variant="outline"
             className="flex gap-2" 
-            onClick={() => navigate(`/assessment/${result.id}`)}
+            onClick={() => navigate(`/assessment/${result?.id}`)}
           >
             <FileText className="h-4 w-4" />
             Refazer Avaliação
