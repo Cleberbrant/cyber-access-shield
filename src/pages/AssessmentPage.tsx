@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,20 +23,35 @@ import { useAssessmentSubmission } from "@/hooks/useAssessmentSubmission";
 export default function AssessmentPage() {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
   
+  // Obter o sessionId da URL
+  const sessionIdParam = searchParams.get('session');
+  
   // Carregar dados da avaliação
-  const { assessment, loading, sessionId } = useAssessmentLoader(assessmentId);
+  const { assessment, loading, sessionId } = useAssessmentLoader(assessmentId, sessionIdParam);
   
   // Hooks personalizados para gerenciar o estado e comportamento
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } = 
     useAssessmentAnswers(sessionId);
   const { isSubmitting, handleSubmitAssessment } = 
     useAssessmentSubmission(assessmentId || '', sessionId);
+    
+  // Garantindo que a duração da avaliação seja sempre um número positivo
+  const assessmentDuration = assessment?.duration && assessment.duration > 0 
+    ? assessment.duration 
+    : 60; // 60 minutos como fallback se a duração for inválida
+    
   const { formatTimeLeft } = useAssessmentTimer(
-    assessment?.duration || 0,
-    () => assessment && handleSubmitAssessment(answers, assessment.questions)
+    assessmentDuration,
+    () => {
+      if (assessment) {
+        console.log("Tempo esgotado. Duração da avaliação:", assessmentDuration);
+        handleSubmitAssessment(answers, assessment.questions);
+      }
+    }
   );
 
   // Ativar proteções de segurança quando o componente for montado

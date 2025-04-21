@@ -135,6 +135,7 @@ export default function Dashboard() {
         sessionId = data.id;
       }
       
+      // Navegar para a página de avaliação sem mostrar diálogo de confirmação
       navigate(`/assessment/${assessmentId}?session=${sessionId}`);
     } catch (error) {
       console.error("Erro ao iniciar avaliação:", error);

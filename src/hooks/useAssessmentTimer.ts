@@ -2,7 +2,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () => void) {
-  const [timeLeft, setTimeLeft] = useState(initialTimeInMinutes * 60);
+  // Garantir que initialTimeInMinutes não seja zero ou negativo
+  const validTime = Math.max(initialTimeInMinutes, 1);
+  const [timeLeft, setTimeLeft] = useState(validTime * 60);
 
   useEffect(() => {
     if (timeLeft <= 0) return;
