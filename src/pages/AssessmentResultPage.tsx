@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, CheckCircle, XCircle, FileText, Home } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AssessmentResult {
   id: string;
@@ -25,67 +26,6 @@ interface AssessmentResult {
   }[];
 }
 
-// Dados de exemplo para simulação
-const demoResult: AssessmentResult = {
-  id: "1",
-  title: "Fundamentos de Segurança Web",
-  description: "Avaliação sobre conceitos básicos de segurança na web, incluindo XSS, CSRF e SQL Injection.",
-  score: 4,
-  maxScore: 6,
-  percentageScore: 67,
-  completedAt: new Date().toISOString(),
-  questionsResults: [
-    {
-      id: "q1",
-      text: "Qual das seguintes não é uma técnica adequada para prevenção de ataques XSS?",
-      correct: true,
-      userAnswer: "Usar a propriedade innerHTML para renderizar conteúdo dinâmico",
-      correctAnswer: "Usar a propriedade innerHTML para renderizar conteúdo dinâmico",
-      explanation: "O uso de innerHTML para renderizar conteúdo dinâmico é perigoso, pois permite a execução de código malicioso. Em vez disso, use textContent ou frameworks seguros que escapam automaticamente o conteúdo."
-    },
-    {
-      id: "q2",
-      text: "SQL Injection pode ser completamente prevenido usando apenas validação do lado do cliente.",
-      correct: true,
-      userAnswer: "Falso",
-      correctAnswer: "Falso",
-      explanation: "Validação do lado do cliente pode ser facilmente contornada. SQL Injection deve ser prevenido com prepared statements, validação do lado do servidor e escaping adequado."
-    },
-    {
-      id: "q3",
-      text: "Qual das seguintes técnicas é mais eficaz para prevenir ataques CSRF?",
-      correct: true,
-      userAnswer: "Implementar tokens anti-CSRF",
-      correctAnswer: "Implementar tokens anti-CSRF",
-      explanation: "Tokens anti-CSRF são a forma mais eficaz de prevenir ataques CSRF, pois garantem que apenas requisições legítimas do site sejam aceitas."
-    },
-    {
-      id: "q4",
-      text: "Explique brevemente o conceito de Same-Origin Policy e sua importância para a segurança web.",
-      correct: false,
-      userAnswer: "É uma política que impede que scripts de um site acessem dados de outro site.",
-      correctAnswer: "É uma política de segurança crítica que restringe como documentos ou scripts de uma origem podem interagir com recursos de outra origem, impedindo acesso não autorizado a dados entre diferentes origens (esquema, host e porta).",
-      explanation: "Same-Origin Policy é uma barreira de segurança fundamental que impede que scripts de uma origem (esquema + host + porta) acessem ou modifiquem propriedades de recursos de uma origem diferente, protegendo os usuários contra ataques XSS e roubo de dados."
-    },
-    {
-      id: "q5",
-      text: "Identifique e corrija a vulnerabilidade de SQL Injection no seguinte código.",
-      correct: false,
-      userAnswer: "Não consegui identificar a vulnerabilidade",
-      correctAnswer: "function getUserData(userId) {\n  // Usando prepared statements para evitar SQL Injection\n  const query = \"SELECT * FROM users WHERE id = ?\";\n  return db.execute(query, [userId]);\n}",
-      explanation: "O código original é vulnerável a SQL Injection porque concatena diretamente o valor do userId à query. A correção envolve usar prepared statements ou parâmetros que escapam os valores adequadamente."
-    },
-    {
-      id: "q6",
-      text: "Relacione os conceitos de segurança com suas descrições.",
-      correct: true,
-      userAnswer: "Todas as correspondências estão corretas",
-      correctAnswer: "Todas as correspondências estão corretas",
-      explanation: "XSS, CSRF, SQLi e CORS são conceitos fundamentais de segurança web que todo desenvolvedor deve compreender."
-    }
-  ]
-};
-
 export default function AssessmentResultPage() {
   const navigate = useNavigate();
   const { assessmentId } = useParams();
@@ -97,11 +37,75 @@ export default function AssessmentResultPage() {
       try {
         setLoading(true);
         
-        // Simulando uma chamada de API
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Usar dados de exemplo para simulação
-        setResult(demoResult);
+        if (!assessmentId) {
+          throw new Error("ID da avaliação não encontrado");
+        }
+
+        // Buscar dados da sessão da avaliação
+        const { data: sessionData, error: sessionError } = await supabase
+          .from("assessment_sessions")
+          .select(`
+            id,
+            score,
+            completed_at,
+            assessment_id,
+            assessment:assessments(
+              id,
+              title,
+              description
+            ),
+            user_answers(
+              id,
+              answer,
+              is_correct,
+              question:questions(
+                id,
+                question_text,
+                correct_answer,
+                options
+              )
+            )
+          `)
+          .eq("assessment_id", assessmentId)
+          .is("is_completed", true)
+          .order("completed_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (sessionError) {
+          throw new Error("Erro ao carregar resultados da avaliação");
+        }
+
+        if (!sessionData) {
+          throw new Error("Nenhum resultado encontrado");
+        }
+
+        // Calcular pontuação e resultados
+        const questionsResults = sessionData.user_answers.map((answer) => ({
+          id: answer.question.id,
+          text: answer.question.question_text,
+          correct: answer.is_correct || false,
+          userAnswer: answer.answer || "Sem resposta",
+          correctAnswer: answer.question.correct_answer,
+          explanation: answer.question.options?.explanation
+        }));
+
+        const totalQuestions = questionsResults.length;
+        const correctAnswers = questionsResults.filter(q => q.correct).length;
+        const percentageScore = Math.round((correctAnswers / totalQuestions) * 100);
+
+        const formattedResult: AssessmentResult = {
+          id: sessionData.assessment.id,
+          title: sessionData.assessment.title,
+          description: sessionData.assessment.description,
+          score: correctAnswers,
+          maxScore: totalQuestions,
+          percentageScore,
+          completedAt: sessionData.completed_at,
+          questionsResults
+        };
+
+        setResult(formattedResult);
       } catch (error) {
         console.error("Erro ao carregar resultado:", error);
       } finally {
