@@ -73,8 +73,17 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         // Buscar dados da avaliação com timeout
         const assessmentData = await fetchWithTimeout();
         
-        // Garantir que a duração seja um número positivo
-        const duration = Math.max(1, assessmentData.duration_minutes || 1);
+        // Log dos dados recebidos para debug da duração
+        console.log("Dados da avaliação carregados:", {
+          title: assessmentData.title,
+          duration_minutes: assessmentData.duration_minutes
+        });
+        
+        // Garantir que a duração seja um número positivo e use o valor do banco
+        const duration = assessmentData.duration_minutes && !isNaN(assessmentData.duration_minutes) 
+          ? Math.max(1, parseInt(assessmentData.duration_minutes)) 
+          : 60; // 60 minutos como fallback somente se o valor for inválido ou nulo
+          
         console.log("Duração carregada:", duration, "minutos");
 
         // Buscar questões com retry
