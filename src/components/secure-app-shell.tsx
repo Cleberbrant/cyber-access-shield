@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -14,10 +13,11 @@ interface SecureAppShellProps {
 
 export function SecureAppShell({ children }: SecureAppShellProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<{ email: string; isAdmin: boolean } | null>(null);
+  const isAssessmentRoute = location.pathname.includes('/assessment/');
   
-  // Verificar autenticação
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -27,7 +27,6 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
         return;
       }
       
-      // Buscar informações do perfil
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('full_name, is_admin')
@@ -47,14 +46,12 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     
     checkAuth();
     
-    // Configurar listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/login");
       }
     });
     
-    // Esta função previne que o usuário saia da tela durante uma avaliação
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress");
       if (isAssessmentInProgress === "true") {
@@ -72,13 +69,11 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     };
   }, [navigate]);
   
-  // Esta função previne atalhos de teclado comuns usados para trapacear
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
       
       if (isAssessmentInProgress) {
-        // Previne Ctrl+C, Ctrl+V, Ctrl+X, PrintScreen, etc.
         if ((e.ctrlKey || e.metaKey) && 
             (e.key === "c" || e.key === "v" || e.key === "x" || 
              e.key === "p" || e.key === "s" || e.key === "a")) {
@@ -91,7 +86,6 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
           return false;
         }
         
-        // Previne Alt+Tab
         if (e.altKey && e.key === "Tab") {
           e.preventDefault();
           toast({
@@ -102,7 +96,6 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
           return false;
         }
         
-        // Previne F12 (DevTools)
         if (e.key === "F12") {
           e.preventDefault();
           toast({
@@ -115,11 +108,10 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       }
     };
     
-    // Esta função mantém o mouse dentro da janela durante uma avaliação
     const handleMouseLeave = (e: MouseEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
       
-      if (isAssessmentInProgress && e.clientY <= 0) {
+      if (isAssessmentInProgress && isAssessmentRoute && e.clientY <= 0) {
         toast({
           title: "Ação Bloqueada",
           description: "Por favor, mantenha o foco na avaliação.",
@@ -128,7 +120,6 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       }
     };
     
-    // Prevenindo clique direito e menu de contexto
     const handleContextMenu = (e: MouseEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
       
@@ -152,7 +143,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [toast]);
+  }, [toast, isAssessmentRoute]);
   
   const handleLogout = async () => {
     const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
@@ -166,10 +157,8 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       return;
     }
     
-    // Desabilitar proteções caso estejam ativas
     disableAssessmentProtection();
     
-    // Fazer logout do Supabase
     await supabase.auth.signOut();
     navigate("/login");
   };
