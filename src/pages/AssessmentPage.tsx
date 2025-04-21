@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -18,8 +17,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Clock, ArrowLeft, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
-// Tipos
+// Types
 interface AssessmentQuestion {
   id: string;
   type: "multiple-choice" | "true-false" | "short-answer" | "code" | "matching";
@@ -37,13 +37,21 @@ interface Assessment {
   questions: AssessmentQuestion[];
 }
 
-// Componente principal
+// Helper function to safely access JSON fields
+const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | undefined => {
+  if (typeof obj === 'object' && obj !== null && key in obj) {
+    return obj[key] as unknown as T;
+  }
+  return undefined;
+};
+
+// Main component
 export default function AssessmentPage() {
   const navigate = useNavigate();
   const { assessmentId } = useParams();
   const { toast } = useToast();
   
-  // Estados
+  // States
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
@@ -53,7 +61,7 @@ export default function AssessmentPage() {
   const [matchPairs, setMatchPairs] = useState<Record<string, string>>({});
   const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Carregar a avaliação do Supabase
+  // Load assessment from Supabase
   useEffect(() => {
     const fetchAssessment = async () => {
       if (!assessmentId) {
@@ -69,7 +77,7 @@ export default function AssessmentPage() {
       try {
         setLoading(true);
         
-        // Buscar dados da avaliação
+        // Fetch assessment data
         const { data: assessmentData, error: assessmentError } = await supabase
           .from("assessments")
           .select("*")
@@ -80,7 +88,7 @@ export default function AssessmentPage() {
           throw new Error(assessmentError?.message || "Avaliação não encontrada");
         }
 
-        // Buscar questões da avaliação
+        // Fetch assessment questions
         const { data: questionsData, error: questionsError } = await supabase
           .from("questions")
           .select("*")
@@ -91,7 +99,7 @@ export default function AssessmentPage() {
           throw new Error(questionsError.message || "Erro ao carregar questões");
         }
 
-        // Converter dados para o formato esperado pelo componente
+        // Convert data to the expected format for the component
         const formattedQuestions: AssessmentQuestion[] = questionsData.map(q => {
           let question: AssessmentQuestion = {
             id: q.id,
@@ -99,13 +107,19 @@ export default function AssessmentPage() {
             type: mapQuestionType(q.question_type)
           };
 
+          // Safely check and access JSON properties
           if (q.options) {
-            if (q.question_type === "multiple_choice" && q.options.options) {
-              question.options = q.options.options;
-            } else if (q.question_type === "code" && q.options.code) {
-              question.code = q.options.code;
-            } else if (q.question_type === "matching" && q.options.matches) {
-              question.matches = q.options.matches;
+            if (q.question_type === "multiple_choice") {
+              const options = getJsonProperty<string[]>(q.options, 'options');
+              if (options) question.options = options;
+            } 
+            else if (q.question_type === "code") {
+              const code = getJsonProperty<string>(q.options, 'code');
+              if (code) question.code = code;
+            } 
+            else if (q.question_type === "matching") {
+              const matches = getJsonProperty<Array<{left: string, right: string}>>(q.options, 'matches');
+              if (matches) question.matches = matches;
             }
           }
 
@@ -121,9 +135,9 @@ export default function AssessmentPage() {
         };
         
         setAssessment(mappedAssessment);
-        setTimeLeft(assessmentData.duration_minutes * 60); // Converter minutos para segundos
+        setTimeLeft(assessmentData.duration_minutes * 60); // Convert minutes to seconds
         
-        // Criar uma sessão de avaliação
+        // Create assessment session
         const { data: userSession } = await supabase.auth.getSession();
         if (userSession && userSession.session) {
           const { data: sessionData, error: sessionError } = await supabase
@@ -159,7 +173,7 @@ export default function AssessmentPage() {
     fetchAssessment();
   }, [assessmentId, navigate, toast]);
   
-  // Helper para mapear tipos de questões do banco para o formato do componente
+  // Helper to map question types from the database to the component format
   const mapQuestionType = (dbType: string): AssessmentQuestion["type"] => {
     const typeMap: Record<string, AssessmentQuestion["type"]> = {
       "multiple_choice": "multiple-choice",
@@ -172,7 +186,7 @@ export default function AssessmentPage() {
     return typeMap[dbType as keyof typeof typeMap] || "multiple-choice";
   };
 
-  // Configurar o cronômetro regressivo
+  // Set up countdown timer
   useEffect(() => {
     if (!assessment || timeLeft <= 0) return;
     
@@ -190,31 +204,31 @@ export default function AssessmentPage() {
     return () => clearInterval(timer);
   }, [assessment, timeLeft]);
   
-  // Ativar proteções de segurança quando a avaliação for carregada
+  // Enable security protections when the assessment is loaded
   useEffect(() => {
     if (loading || !assessment) return;
     
-    // Ativar proteções de segurança
+    // Enable security protections
     enableAssessmentProtection();
     
-    // Prevenir navegação para fora da página
+    // Prevent navigation away from the page
     const removePreventNavigation = preventNavigation();
     
     return () => {
-      // Desativar proteções quando o componente é desmontado
+      // Disable protections when the component is unmounted
       disableAssessmentProtection();
       removePreventNavigation();
     };
   }, [loading, assessment]);
 
-  // Formatar o tempo restante
+  // Format remaining time
   const formatTimeLeft = useCallback(() => {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }, [timeLeft]);
   
-  // Manipular a navegação entre questões
+  // Handle navigation between questions
   const goToNextQuestion = () => {
     if (currentQuestionIndex < (assessment?.questions.length || 0) - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -227,9 +241,9 @@ export default function AssessmentPage() {
     }
   };
   
-  // Manipular as respostas
+  // Handle answers
   const handleAnswerChange = (questionId: string, value: any) => {
-    // Sanitizar entradas para prevenir SQL Injection
+    // Sanitize inputs to prevent SQL Injection
     const sanitizedValue = typeof value === 'string' ? sanitizeInput(value) : value;
     
     setAnswers(prev => ({
@@ -237,21 +251,21 @@ export default function AssessmentPage() {
       [questionId]: sanitizedValue
     }));
     
-    // Salvar resposta no banco de dados
+    // Save answer in the database
     if (sessionId) {
       saveAnswer(questionId, sanitizedValue);
     }
   };
   
-  // Salvar resposta no banco de dados
+  // Save answer to the database
   const saveAnswer = async (questionId: string, answer: any) => {
     if (!sessionId) return;
     
     try {
-      // Converter resposta para string (caso seja um objeto)
+      // Convert answer to string (if it's an object)
       const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
       
-      // Usar upsert para criar ou atualizar a resposta
+      // Use upsert to create or update the answer
       await supabase
         .from("user_answers")
         .upsert({
@@ -267,7 +281,7 @@ export default function AssessmentPage() {
   };
   
   const handleMatchPairChange = (questionId: string, leftItem: string, rightItem: string) => {
-    // Sanitizar entradas
+    // Sanitize inputs
     const sanitizedLeftItem = sanitizeInput(leftItem);
     const sanitizedRightItem = sanitizeInput(rightItem);
     
@@ -276,19 +290,19 @@ export default function AssessmentPage() {
       [sanitizedLeftItem]: sanitizedRightItem
     }));
     
-    // Atualizar as respostas com todos os pares atuais
+    // Update answers with all current pairs
     const allPairs = { ...matchPairs, [sanitizedLeftItem]: sanitizedRightItem };
     handleAnswerChange(questionId, allPairs);
   };
   
-  // Manipular o envio da avaliação
+  // Handle assessment submission
   const handleSubmitAssessment = async () => {
     if (isSubmitting) return;
     
     setIsSubmitting(true);
     
     try {
-      // Verificar se todas as questões foram respondidas
+      // Check if all questions have been answered
       const unansweredQuestions = assessment?.questions.filter(q => !answers[q.id]);
       
       if (unansweredQuestions && unansweredQuestions.length > 0) {
@@ -303,21 +317,21 @@ export default function AssessmentPage() {
       }
       
       if (sessionId) {
-        // Atualizar sessão como completa
+        // Update session as complete
         await supabase
           .from("assessment_sessions")
           .update({
             is_completed: true,
             completed_at: new Date().toISOString(),
-            // Aqui poderia calcular pontuação preliminar se necessário
+            // Preliminary score calculation could be done here if needed
           })
           .eq("id", sessionId);
       }
       
-      // Desativar proteções de segurança
+      // Disable security protections
       disableAssessmentProtection();
       
-      // Redirecionar para a página de resultados
+      // Redirect to results page
       navigate(`/assessment-result/${assessmentId}`);
       
       toast({
@@ -335,7 +349,7 @@ export default function AssessmentPage() {
     }
   };
   
-  // Renderizar a questão atual
+  // Render the current question
   const renderCurrentQuestion = () => {
     if (!assessment) return null;
     
