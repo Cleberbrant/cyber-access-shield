@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, CheckCircle, XCircle, FileText, Home } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 interface AssessmentResult {
   id: string;
@@ -25,6 +26,14 @@ interface AssessmentResult {
     explanation?: string;
   }[];
 }
+
+// Função auxiliar para extrair uma propriedade de um objeto Json
+const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | undefined => {
+  if (typeof obj === 'object' && obj !== null && key in obj) {
+    return obj[key] as unknown as T;
+  }
+  return undefined;
+};
 
 export default function AssessmentResultPage() {
   const navigate = useNavigate();
@@ -81,14 +90,19 @@ export default function AssessmentResultPage() {
         }
 
         // Calcular pontuação e resultados
-        const questionsResults = sessionData.user_answers.map((answer) => ({
-          id: answer.question.id,
-          text: answer.question.question_text,
-          correct: answer.is_correct || false,
-          userAnswer: answer.answer || "Sem resposta",
-          correctAnswer: answer.question.correct_answer,
-          explanation: answer.question.options?.explanation
-        }));
+        const questionsResults = sessionData.user_answers.map((answer) => {
+          // Extrair a explicação do objeto options usando a função auxiliar
+          const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
+          
+          return {
+            id: answer.question.id,
+            text: answer.question.question_text,
+            correct: answer.is_correct || false,
+            userAnswer: answer.answer || "Sem resposta",
+            correctAnswer: answer.question.correct_answer,
+            explanation: explanation
+          };
+        });
 
         const totalQuestions = questionsResults.length;
         const correctAnswers = questionsResults.filter(q => q.correct).length;
