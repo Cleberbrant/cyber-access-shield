@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -12,10 +13,10 @@ const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | und
   return undefined;
 };
 
-export function useAssessmentLoader(assessmentId: string | undefined) {
+export function useAssessmentLoader(assessmentId: string | undefined, existingSessionId: string | null = null) {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(existingSessionId);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -67,26 +68,35 @@ export function useAssessmentLoader(assessmentId: string | undefined) {
           questions: formattedQuestions
         };
         
+        console.log("Duração carregada:", assessmentData.duration_minutes, "minutos");
         setAssessment(mappedAssessment);
         
-        // Criar sessão da avaliação
-        const { data: userSession } = await supabase.auth.getSession();
-        if (userSession && userSession.session) {
-          const { data: sessionData, error: sessionError } = await supabase
-            .from("assessment_sessions")
-            .insert({
-              assessment_id: assessmentId,
-              user_id: userSession.session.user.id,
-              started_at: new Date().toISOString(),
-              is_completed: false
-            })
-            .select('id')
-            .single();
-            
-          if (sessionError) {
-            console.error("Erro ao criar sessão de avaliação:", sessionError);
-          } else if (sessionData) {
-            setSessionId(sessionData.id);
+        // Verificar sessão existente ou criar nova
+        if (existingSessionId) {
+          // Usar a sessão fornecida na URL
+          console.log("Usando sessão existente:", existingSessionId);
+          setSessionId(existingSessionId);
+        } else {
+          // Criar sessão da avaliação
+          const { data: userSession } = await supabase.auth.getSession();
+          if (userSession && userSession.session) {
+            const { data: sessionData, error: sessionError } = await supabase
+              .from("assessment_sessions")
+              .insert({
+                assessment_id: assessmentId,
+                user_id: userSession.session.user.id,
+                started_at: new Date().toISOString(),
+                is_completed: false
+              })
+              .select('id')
+              .single();
+              
+            if (sessionError) {
+              console.error("Erro ao criar sessão de avaliação:", sessionError);
+            } else if (sessionData) {
+              console.log("Nova sessão criada:", sessionData.id);
+              setSessionId(sessionData.id);
+            }
           }
         }
       } catch (error: any) {
@@ -103,7 +113,7 @@ export function useAssessmentLoader(assessmentId: string | undefined) {
     };
     
     loadAssessment();
-  }, [assessmentId, navigate, toast]);
+  }, [assessmentId, navigate, toast, existingSessionId]);
 
   return { assessment, loading, sessionId };
 }
