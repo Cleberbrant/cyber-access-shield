@@ -4,8 +4,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { enableAssessmentProtection, disableAssessmentProtection } from "@/utils/secure-utils";
 
@@ -26,12 +25,13 @@ export default function AssessmentPage() {
   const [searchParams] = useSearchParams();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
+  const [retryCount, setRetryCount] = useState(0);
   
   // Obter o sessionId da URL
   const sessionIdParam = searchParams.get('session');
   
   // Carregar dados da avaliação
-  const { assessment, loading, sessionId } = useAssessmentLoader(assessmentId, sessionIdParam);
+  const { assessment, loading, sessionId, loadError } = useAssessmentLoader(assessmentId, sessionIdParam);
   
   // Hooks personalizados para gerenciar o estado e comportamento
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } = 
@@ -53,6 +53,12 @@ export default function AssessmentPage() {
       }
     }
   );
+
+  // Função para tentar novamente caso ocorra um erro
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    navigate(`/assessment/${assessmentId}?session=${sessionIdParam}&retry=${Date.now()}`);
+  };
 
   // Ativar proteções de segurança quando o componente for montado
   useEffect(() => {
@@ -76,10 +82,11 @@ export default function AssessmentPage() {
     return (
       <SecureAppShell>
         <div className="container py-8">
-          <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
-              <div className="h-8 w-8 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p>Carregando avaliação...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-xl font-medium">Carregando avaliação...</p>
+              <p className="text-muted-foreground mt-2">Aguarde enquanto preparamos sua avaliação</p>
             </div>
           </div>
         </div>
@@ -87,16 +94,44 @@ export default function AssessmentPage() {
     );
   }
 
-  if (!assessment) {
+  if (loadError || !assessment) {
     return (
       <SecureAppShell>
         <div className="container py-8">
-          <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Avaliação não encontrada</h2>
+              <h2 className="text-2xl font-bold mb-2">Erro ao carregar avaliação</h2>
+              <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                {loadError || "Não foi possível encontrar a avaliação solicitada."}
+              </p>
+              <div className="space-x-4">
+                <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                  Voltar para o Dashboard
+                </Button>
+                {retryCount < 3 && (
+                  <Button onClick={handleRetry}>
+                    Tentar novamente
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </SecureAppShell>
+    );
+  }
+
+  if (!sessionId) {
+    return (
+      <SecureAppShell>
+        <div className="container py-8">
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="text-center">
+              <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Sessão não encontrada</h2>
               <p className="text-muted-foreground mb-4">
-                Não foi possível encontrar a avaliação solicitada.
+                Não foi possível encontrar ou criar uma sessão para esta avaliação.
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard
@@ -149,7 +184,7 @@ export default function AssessmentPage() {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Enviando...
                   </>
                 ) : (
@@ -184,7 +219,7 @@ export default function AssessmentPage() {
           >
             {isSubmitting ? (
               <>
-                <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Enviando...
               </>
             ) : (
