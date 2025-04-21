@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -77,6 +78,9 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
       // Desativar proteções
       disableAssessmentProtection();
       
+      // Limpar flag de avaliação em andamento
+      localStorage.removeItem("assessmentInProgress");
+      
       // Navegar para a página de resultados
       navigate(`/assessment-result/${assessmentId}`);
       
@@ -97,11 +101,13 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
 
   // Função para cancelar a avaliação atual
   const cancelAssessment = () => {
+    console.log("Cancelando avaliação...");
     // Garantir que todas as proteções sejam desativadas ao cancelar
     disableAssessmentProtection();
     
     // Limpar qualquer flag de avaliação em andamento
     localStorage.removeItem("assessmentInProgress");
+    sessionStorage.removeItem("assessmentInProgress");
     
     // Redirecionar para o dashboard
     navigate("/dashboard");

@@ -17,9 +17,15 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
   const location = useLocation();
   const { toast } = useToast();
   const [user, setUser] = useState<{ email: string; isAdmin: boolean } | null>(null);
-  const isAssessmentRoute = location.pathname.includes('/assessment/');
+  const isAssessmentRoute = location.pathname.includes('/assessment/') && !location.pathname.includes('/assessment-result/');
   
   useEffect(() => {
+    // Se NÃO estiver em uma rota de avaliação, garantir que as proteções estejam desabilitadas
+    if (!isAssessmentRoute) {
+      disableAssessmentProtection();
+      localStorage.removeItem("assessmentInProgress");
+    }
+    
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -158,7 +164,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     if (isAssessmentRoute && localStorage.getItem("assessmentInProgress") === "true") {
       toast({
         title: "Avaliação em andamento",
-        description: "Você não pode sair enquanto uma avaliação está em andamento.",
+        description: "Finalize ou cancele a avaliação antes de sair.",
         variant: "destructive"
       });
       return;
@@ -166,6 +172,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     
     // Sempre garantir que as proteções estão desativadas ao sair
     disableAssessmentProtection();
+    localStorage.removeItem("assessmentInProgress");
     
     await supabase.auth.signOut();
     navigate("/login");
