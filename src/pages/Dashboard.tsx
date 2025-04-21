@@ -36,6 +36,8 @@ export default function Dashboard() {
   useEffect(() => {
     // Garantir que qualquer proteção ativa seja removida ao acessar o Dashboard
     disableAssessmentProtection();
+    // Também remover explicitamente a flag de avaliação em andamento
+    localStorage.removeItem("assessmentInProgress");
     
     const fetchData = async () => {
       try {
@@ -139,8 +141,9 @@ export default function Dashboard() {
       }
       
       // Navegar diretamente para a página de avaliação sem mostrar diálogo de confirmação
+      console.log("Iniciando avaliação, navegando para:", `/assessment/${assessmentId}?session=${sessionId}`);
       navigate(`/assessment/${assessmentId}?session=${sessionId}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao iniciar avaliação:", error);
       toast({
         title: "Erro",
