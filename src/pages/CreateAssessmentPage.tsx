@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -265,15 +264,19 @@ export default function CreateAssessmentPage() {
               <Label htmlFor="question-options">Alternativas:</Label>
               {currentQuestion.options?.map((option, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <RadioGroupItem 
-                    value={index.toString()} 
-                    id={`option-${index}`}
-                    checked={currentQuestion.correctAnswer === index}
-                    onClick={() => setCurrentQuestion({
+                  <RadioGroup
+                    value={currentQuestion.correctAnswer?.toString()}
+                    onValueChange={(value) => setCurrentQuestion({
                       ...currentQuestion,
-                      correctAnswer: index
+                      correctAnswer: parseInt(value)
                     })}
-                  />
+                    className="flex items-center"
+                  >
+                    <RadioGroupItem 
+                      value={index.toString()} 
+                      id={`option-${index}`}
+                    />
+                  </RadioGroup>
                   <Input
                     id={`option-${index}`}
                     value={option}
@@ -502,9 +505,6 @@ export default function CreateAssessmentPage() {
             </div>
           </div>
         );
-        
-      default:
-        return null;
     }
   };
   
@@ -512,7 +512,11 @@ export default function CreateAssessmentPage() {
   const getQuestionTypeIcon = (type: QuestionType) => {
     switch (type) {
       case "multiple-choice":
-        return <RadioGroupItem value="" className="border-primary" />;
+        return <div className="flex items-center">
+                <RadioGroup value="na">
+                  <RadioGroupItem value="na" className="border-primary" />
+                </RadioGroup>
+              </div>;
       case "true-false":
         return <Check className="h-4 w-4 text-primary" />;
       case "short-answer":
