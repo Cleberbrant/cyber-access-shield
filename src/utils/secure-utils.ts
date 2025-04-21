@@ -1,4 +1,6 @@
 
+import { supabase } from "@/integrations/supabase/client";
+
 // Utilitários de segurança para a aplicação
 
 // Função para detectar se o DevTools está aberto (não é 100% confiável, mas auxilia)
@@ -112,21 +114,63 @@ export const preventNavigation = (): (() => void) => {
 };
 
 // Função para verificar se o usuário está autenticado
-export const isAuthenticated = (): boolean => {
-  const user = localStorage.getItem("user");
-  return !!user;
+export const isAuthenticated = async (): Promise<boolean> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  return !!session;
 };
 
 // Função para verificar se o usuário é administrador
-export const isAdmin = (): boolean => {
+export const isAdmin = async (): Promise<boolean> => {
   try {
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return false;
+    const { data: { session } } = await supabase.auth.getSession();
     
-    const user = JSON.parse(userStr);
-    return user.isAdmin === true;
+    if (!session) return false;
+    
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', session.user.id)
+      .single();
+    
+    if (error || !profile) {
+      console.error("Erro ao verificar permissões de administrador:", error);
+      return false;
+    }
+    
+    return profile.is_admin === true;
   } catch (error) {
     console.error("Erro ao verificar permissões de administrador:", error);
     return false;
   }
+};
+
+// Versões síncronas para uso em componentes que não podem esperar por uma Promise
+export const isAuthenticatedSync = (): boolean => {
+  // Uma verificação preliminar usando localStorage
+  // Esta função deve ser usada apenas quando a versão assíncrona não é viável
+  const session = localStorage.getItem("sb-erbyxhjehrvpxvfycxwx-auth-token");
+  return !!session;
+};
+
+export const isAdminSync = (): boolean => {
+  try {
+    // Verificar no localStorage se o usuário já foi identificado como admin
+    const isAdminValue = localStorage.getItem("isAdmin");
+    if (isAdminValue) {
+      return isAdminValue === "true";
+    }
+    
+    // Se não houver valor no localStorage, retorna false
+    // O valor correto será definido após a verificação assíncrona
+    return false;
+  } catch (error) {
+    console.error("Erro ao verificar permissões de administrador:", error);
+    return false;
+  }
+};
+
+// Função para armazenar o status de admin no localStorage para acesso síncrono
+export const updateAdminStatus = async (): Promise<void> => {
+  const adminStatus = await isAdmin();
+  localStorage.setItem("isAdmin", adminStatus.toString());
 };

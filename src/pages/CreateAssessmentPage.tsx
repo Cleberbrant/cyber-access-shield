@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,8 +14,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { isAdmin, sanitizeInput } from "@/utils/secure-utils";
 import { 
   Plus, 
   Minus, 
@@ -23,17 +21,14 @@ import {
   FileText,
   Check,
   Code,
-  AlignJustify
+  AlignJustify,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isAdminSync, sanitizeInput, updateAdminStatus } from "@/utils/secure-utils";
+import { supabase } from "@/integrations/supabase/client";
 
-// Tipos de questão
-type QuestionType = 
-  | "multiple-choice"
-  | "true-false"
-  | "short-answer"
-  | "code"
-  | "matching";
+type QuestionType = "multiple_choice" | "true_false" | "text" | "code" | "matching";
 
 interface Question {
   id: string;
@@ -42,7 +37,7 @@ interface Question {
   code?: string;
   options?: string[];
   correctAnswer?: string | number | boolean;
-  // Para questões de correspondência (matching)
+  order?: number;
   matches?: {
     left: string;
     right: string;
@@ -52,35 +47,117 @@ interface Question {
 export default function CreateAssessmentPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { id: assessmentId } = useParams();
+  const isEditMode = !!assessmentId;
   
-  // Estado para verificação de administrador
-  const [isUserAdmin, setIsUserAdmin] = useState(() => isAdmin());
+  const [isUserAdmin, setIsUserAdmin] = useState(() => isAdminSync());
+  const [loading, setLoading] = useState(false);
   
-  // Estados do formulário da avaliação
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState("45");
-  const [dueDate, setDueDate] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   
-  // Estado para a questão atual sendo editada
   const [currentQuestion, setCurrentQuestion] = useState<Question>({
     id: "",
-    type: "multiple-choice",
+    type: "multiple_choice",
     text: "",
     options: ["", "", "", ""],
     correctAnswer: 0
   });
   
-  // Verificar permissões
+  useEffect(() => {
+    const checkAdmin = async () => {
+      await updateAdminStatus();
+      setIsUserAdmin(isAdminSync());
+      
+      if (!isAdminSync()) {
+        navigate("/dashboard");
+        return;
+      }
+    };
+    
+    checkAdmin();
+    
+    if (isEditMode && assessmentId) {
+      const fetchAssessment = async () => {
+        setLoading(true);
+        try {
+          const { data: assessmentData, error: assessmentError } = await supabase
+            .from('assessments')
+            .select('*')
+            .eq('id', assessmentId)
+            .single();
+            
+          if (assessmentError) throw assessmentError;
+          
+          setTitle(assessmentData.title);
+          setDescription(assessmentData.description || "");
+          setDuration(assessmentData.duration_minutes.toString());
+          
+          const { data: questionsData, error: questionsError } = await supabase
+            .from('questions')
+            .select('*')
+            .eq('assessment_id', assessmentId)
+            .order('order_index');
+            
+          if (questionsError) throw questionsError;
+          
+          const formattedQuestions: Question[] = questionsData.map(q => {
+            const question: Question = {
+              id: q.id,
+              type: q.question_type as QuestionType,
+              text: q.question_text,
+              order: q.order_index
+            };
+            
+            if (q.options) {
+              if (q.question_type === "multiple_choice") {
+                question.options = q.options.options;
+                question.correctAnswer = q.correct_answer !== null ? parseInt(q.correct_answer) : 0;
+              } else if (q.question_type === "true_false") {
+                question.correctAnswer = q.correct_answer === "true";
+              } else if (q.question_type === "matching") {
+                question.matches = q.options.matches;
+              }
+            }
+            
+            if (q.question_type === "text") {
+              question.correctAnswer = q.correct_answer || "";
+            }
+            
+            if (q.question_type === "code") {
+              question.code = q.options?.code || "";
+              question.correctAnswer = q.correct_answer || "";
+            }
+            
+            return question;
+          });
+          
+          setQuestions(formattedQuestions);
+        } catch (error) {
+          console.error("Erro ao carregar avaliação:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar os dados da avaliação.",
+            variant: "destructive"
+          });
+          navigate("/dashboard");
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchAssessment();
+    }
+  }, [assessmentId, isEditMode, navigate, toast]);
+  
   if (!isUserAdmin) {
     navigate("/dashboard");
     return null;
   }
   
-  // Funções para gerenciar questões
   const addQuestion = () => {
-    // Validação básica
     if (!currentQuestion.text.trim()) {
       toast({
         title: "Erro",
@@ -90,8 +167,7 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    // Para questões de múltipla escolha, verificar se há opções válidas
-    if (currentQuestion.type === "multiple-choice" && 
+    if (currentQuestion.type === "multiple_choice" && 
         (!currentQuestion.options || 
          currentQuestion.options.some(opt => !opt.trim()) || 
          currentQuestion.options.length < 2)) {
@@ -103,7 +179,6 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    // Para questões de código, verificar se há código
     if (currentQuestion.type === "code" && !currentQuestion.code?.trim()) {
       toast({
         title: "Erro",
@@ -113,7 +188,6 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    // Para questões de correspondência, verificar se há correspondências válidas
     if (currentQuestion.type === "matching" && 
         (!currentQuestion.matches || 
          currentQuestion.matches.length < 2 ||
@@ -126,16 +200,14 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    // Adicionar a questão com ID único
     const newQuestion = {
       ...currentQuestion,
       id: `q${Date.now()}`,
-      text: sanitizeInput(currentQuestion.text) // Sanitização para prevenir XSS
+      text: sanitizeInput(currentQuestion.text)
     };
     
     setQuestions([...questions, newQuestion]);
     
-    // Resetar o formulário da questão
     resetQuestionForm();
     
     toast({
@@ -147,7 +219,7 @@ export default function CreateAssessmentPage() {
   const resetQuestionForm = () => {
     setCurrentQuestion({
       id: "",
-      type: "multiple-choice",
+      type: "multiple_choice",
       text: "",
       options: ["", "", "", ""],
       correctAnswer: 0
@@ -161,16 +233,15 @@ export default function CreateAssessmentPage() {
       text: currentQuestion.text
     };
     
-    // Configurar campos com base no tipo de questão
     switch (type) {
-      case "multiple-choice":
+      case "multiple_choice":
         newQuestion.options = ["", "", "", ""];
         newQuestion.correctAnswer = 0;
         break;
-      case "true-false":
+      case "true_false":
         newQuestion.correctAnswer = true;
         break;
-      case "short-answer":
+      case "text":
         newQuestion.correctAnswer = "";
         break;
       case "code":
@@ -196,8 +267,7 @@ export default function CreateAssessmentPage() {
     });
   };
   
-  const handleSaveAssessment = () => {
-    // Validação do formulário da avaliação
+  const handleSaveAssessment = async () => {
     if (!title.trim()) {
       toast({
         title: "Erro",
@@ -225,15 +295,6 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    if (!dueDate) {
-      toast({
-        title: "Erro",
-        description: "A data limite da avaliação é obrigatória.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     if (questions.length === 0) {
       toast({
         title: "Erro",
@@ -243,21 +304,102 @@ export default function CreateAssessmentPage() {
       return;
     }
     
-    // Em uma aplicação real, enviaríamos os dados para o servidor
-    // Para esta demonstração, simularemos um envio bem-sucedido
-    toast({
-      title: "Avaliação criada",
-      description: "A avaliação foi criada com sucesso."
-    });
+    setLoading(true);
     
-    // Redirecionar para o dashboard
-    navigate("/dashboard");
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      let savedAssessmentId: string;
+      
+      if (isEditMode && assessmentId) {
+        const { error } = await supabase
+          .from('assessments')
+          .update({
+            title,
+            description,
+            duration_minutes: parseInt(duration)
+          })
+          .eq('id', assessmentId);
+          
+        if (error) throw error;
+        savedAssessmentId = assessmentId;
+        
+        await supabase
+          .from('questions')
+          .delete()
+          .eq('assessment_id', assessmentId);
+      } else {
+        const { data, error } = await supabase
+          .from('assessments')
+          .insert({
+            title,
+            description,
+            duration_minutes: parseInt(duration),
+            created_by: user.id
+          })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        savedAssessmentId = data.id;
+      }
+      
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        
+        const questionData: any = {
+          assessment_id: savedAssessmentId,
+          question_text: q.text,
+          question_type: q.type,
+          order_index: i,
+          points: 1
+        };
+        
+        if (q.type === "multiple_choice") {
+          questionData.options = { options: q.options };
+          questionData.correct_answer = q.correctAnswer?.toString();
+        } else if (q.type === "true_false") {
+          questionData.correct_answer = q.correctAnswer === true ? "true" : "false";
+        } else if (q.type === "text") {
+          questionData.correct_answer = q.correctAnswer as string;
+        } else if (q.type === "code") {
+          questionData.options = { code: q.code };
+          questionData.correct_answer = q.correctAnswer as string;
+        } else if (q.type === "matching") {
+          questionData.options = { matches: q.matches };
+        }
+        
+        const { error } = await supabase
+          .from('questions')
+          .insert(questionData);
+          
+        if (error) throw error;
+      }
+      
+      toast({
+        title: isEditMode ? "Avaliação atualizada" : "Avaliação criada",
+        description: isEditMode 
+          ? "A avaliação foi atualizada com sucesso." 
+          : "A avaliação foi criada com sucesso."
+      });
+      
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Erro ao salvar avaliação:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar a avaliação. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
-  // Renderização dos campos específicos com base no tipo de questão
   const renderQuestionFields = () => {
     switch (currentQuestion.type) {
-      case "multiple-choice":
+      case "multiple_choice":
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -335,7 +477,7 @@ export default function CreateAssessmentPage() {
           </div>
         );
         
-      case "true-false":
+      case "true_false":
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -362,7 +504,7 @@ export default function CreateAssessmentPage() {
           </div>
         );
         
-      case "short-answer":
+      case "text":
         return (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -508,18 +650,17 @@ export default function CreateAssessmentPage() {
     }
   };
   
-  // Função para exibir o ícone do tipo de questão
   const getQuestionTypeIcon = (type: QuestionType) => {
     switch (type) {
-      case "multiple-choice":
+      case "multiple_choice":
         return <div className="flex items-center">
                 <RadioGroup value="na">
                   <RadioGroupItem value="na" className="border-primary" />
                 </RadioGroup>
               </div>;
-      case "true-false":
+      case "true_false":
         return <Check className="h-4 w-4 text-primary" />;
-      case "short-answer":
+      case "text":
         return <AlignJustify className="h-4 w-4 text-primary" />;
       case "code":
         return <Code className="h-4 w-4 text-primary" />;
@@ -543,237 +684,235 @@ export default function CreateAssessmentPage() {
         </Button>
         
         <div className="mb-8 space-y-4">
-          <h1 className="text-3xl font-bold">Criar Nova Avaliação</h1>
+          <h1 className="text-3xl font-bold">
+            {isEditMode ? "Editar Avaliação" : "Criar Nova Avaliação"}
+          </h1>
           <p className="text-muted-foreground">
-            Defina as configurações e questões para sua avaliação.
+            {isEditMode 
+              ? "Modifique as configurações e questões da sua avaliação." 
+              : "Defina as configurações e questões para sua avaliação."}
           </p>
         </div>
         
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Configurações da avaliação */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Título da avaliação</Label>
-                    <Input
-                      id="title"
-                      value={title}
-                      onChange={e => setTitle(e.target.value)}
-                      placeholder="Ex: Fundamentos de Segurança Web"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descrição</Label>
-                    <Textarea
-                      id="description"
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      placeholder="Descrição da avaliação e instruções para os alunos"
-                      className="h-24"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duração (minutos)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      value={duration}
-                      onChange={e => setDuration(e.target.value)}
-                      min="1"
-                      placeholder="Ex: 45"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="due-date">Data limite</Label>
-                    <Input
-                      id="due-date"
-                      type="date"
-                      value={dueDate}
-                      onChange={e => setDueDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
-                  
-                  <div className="pt-4">
-                    <p className="text-sm font-medium mb-2">Resumo:</p>
-                    <ul className="text-sm space-y-1">
-                      <li>
-                        Questões: <span className="font-medium">{questions.length}</span>
-                      </li>
-                      <li>
-                        Duração: <span className="font-medium">{duration} minutos</span>
-                      </li>
-                      {dueDate && (
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+            <span>Carregando...</span>
+          </div>
+        ) : (
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Título da avaliação</Label>
+                      <Input
+                        id="title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="Ex: Fundamentos de Segurança Web"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Descrição</Label>
+                      <Textarea
+                        id="description"
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Descrição da avaliação e instruções para os alunos"
+                        className="h-24"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="duration">Duração (minutos)</Label>
+                      <Input
+                        id="duration"
+                        type="number"
+                        value={duration}
+                        onChange={e => setDuration(e.target.value)}
+                        min="1"
+                        placeholder="Ex: 45"
+                      />
+                    </div>
+                    
+                    <div className="pt-4">
+                      <p className="text-sm font-medium mb-2">Resumo:</p>
+                      <ul className="text-sm space-y-1">
                         <li>
-                          Data limite: <span className="font-medium">
-                            {new Date(dueDate).toLocaleDateString('pt-BR')}
-                          </span>
+                          Questões: <span className="font-medium">{questions.length}</span>
                         </li>
-                      )}
-                    </ul>
+                        <li>
+                          Duração: <span className="font-medium">{duration} minutos</span>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Questões */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Formulário para adicionar questão */}
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-medium mb-4">Adicionar Nova Questão</h3>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="question-type">Tipo de questão</Label>
-                    <Select
-                      value={currentQuestion.type}
-                      onValueChange={value => handleQuestionTypeChange(value as QuestionType)}
-                    >
-                      <SelectTrigger id="question-type">
-                        <SelectValue placeholder="Selecione o tipo de questão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="multiple-choice">Múltipla escolha</SelectItem>
-                        <SelectItem value="true-false">Verdadeiro/Falso</SelectItem>
-                        <SelectItem value="short-answer">Resposta curta</SelectItem>
-                        <SelectItem value="code">Código</SelectItem>
-                        <SelectItem value="matching">Correspondência</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="question-text">Enunciado da questão</Label>
-                    <Textarea
-                      id="question-text"
-                      value={currentQuestion.text}
-                      onChange={e => setCurrentQuestion({
-                        ...currentQuestion,
-                        text: e.target.value
-                      })}
-                      placeholder="Digite o enunciado da questão"
-                      className="h-24"
-                    />
-                  </div>
-                  
-                  {renderQuestionFields()}
-                  
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={resetQuestionForm}
-                    >
-                      Limpar
-                    </Button>
-                    <Button 
-                      onClick={addQuestion}
-                      className="cyber-button"
-                    >
-                      Adicionar Questão
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
             
-            {/* Lista de questões adicionadas */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Questões Adicionadas ({questions.length})</h3>
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Adicionar Nova Questão</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="question-type">Tipo de questão</Label>
+                      <Select
+                        value={currentQuestion.type}
+                        onValueChange={value => handleQuestionTypeChange(value as QuestionType)}
+                      >
+                        <SelectTrigger id="question-type">
+                          <SelectValue placeholder="Selecione o tipo de questão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="multiple_choice">Múltipla escolha</SelectItem>
+                          <SelectItem value="true_false">Verdadeiro/Falso</SelectItem>
+                          <SelectItem value="text">Resposta curta</SelectItem>
+                          <SelectItem value="code">Código</SelectItem>
+                          <SelectItem value="matching">Correspondência</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="question-text">Enunciado da questão</Label>
+                      <Textarea
+                        id="question-text"
+                        value={currentQuestion.text}
+                        onChange={e => setCurrentQuestion({
+                          ...currentQuestion,
+                          text: e.target.value
+                        })}
+                        placeholder="Digite o enunciado da questão"
+                        className="h-24"
+                      />
+                    </div>
+                    
+                    {renderQuestionFields()}
+                    
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={resetQuestionForm}
+                      >
+                        Limpar
+                      </Button>
+                      <Button 
+                        onClick={addQuestion}
+                        className="cyber-button"
+                      >
+                        Adicionar Questão
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               
-              {questions.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-                    <p className="text-muted-foreground">
-                      Nenhuma questão adicionada. Use o formulário acima para adicionar questões.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {questions.map((question, index) => (
-                    <Card key={question.id}>
-                      <CardContent className="py-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full border bg-muted">
-                              <span className="text-xs font-medium">{index + 1}</span>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                {getQuestionTypeIcon(question.type)}
-                                <span className="text-xs text-muted-foreground capitalize">
-                                  {question.type === "multiple-choice" ? "Múltipla escolha" :
-                                   question.type === "true-false" ? "Verdadeiro/Falso" :
-                                   question.type === "short-answer" ? "Resposta curta" :
-                                   question.type === "code" ? "Código" :
-                                   question.type === "matching" ? "Correspondência" : ""}
-                                </span>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Questões Adicionadas ({questions.length})</h3>
+                
+                {questions.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-8 text-center">
+                      <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">
+                        Nenhuma questão adicionada. Use o formulário acima para adicionar questões.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {questions.map((question, index) => (
+                      <Card key={question.id}>
+                        <CardContent className="py-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full border bg-muted">
+                                <span className="text-xs font-medium">{index + 1}</span>
                               </div>
-                              <p className="font-medium">{question.text}</p>
-                              
-                              {question.type === "multiple-choice" && question.options && (
-                                <div className="mt-2 space-y-1 text-sm">
-                                  {question.options.map((option, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                      <div className={`h-3 w-3 rounded-full ${i === question.correctAnswer ? 'bg-cyber-blue' : 'bg-muted'}`}></div>
-                                      <span className={i === question.correctAnswer ? 'font-medium' : ''}>{option}</span>
-                                    </div>
-                                  ))}
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {getQuestionTypeIcon(question.type)}
+                                  <span className="text-xs text-muted-foreground capitalize">
+                                    {question.type === "multiple_choice" ? "Múltipla escolha" :
+                                     question.type === "true_false" ? "Verdadeiro/Falso" :
+                                     question.type === "text" ? "Resposta curta" :
+                                     question.type === "code" ? "Código" :
+                                     question.type === "matching" ? "Correspondência" : ""}
+                                  </span>
                                 </div>
-                              )}
-                              
-                              {question.type === "true-false" && (
-                                <div className="mt-2 flex items-center gap-2 text-sm">
-                                  <span>Resposta correta:</span>
-                                  <span className="font-medium">{question.correctAnswer === true ? "Verdadeiro" : "Falso"}</span>
-                                </div>
-                              )}
+                                <p className="font-medium">{question.text}</p>
+                                
+                                {question.type === "multiple_choice" && question.options && (
+                                  <div className="mt-2 space-y-1 text-sm">
+                                    {question.options.map((option, i) => (
+                                      <div key={i} className="flex items-center gap-2">
+                                        <div className={`h-3 w-3 rounded-full ${i === question.correctAnswer ? 'bg-cyber-blue' : 'bg-muted'}`}></div>
+                                        <span className={i === question.correctAnswer ? 'font-medium' : ''}>{option}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                {question.type === "true_false" && (
+                                  <div className="mt-2 flex items-center gap-2 text-sm">
+                                    <span>Resposta correta:</span>
+                                    <span className="font-medium">{question.correctAnswer === true ? "Verdadeiro" : "Falso"}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeQuestion(question.id)}
+                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            >
+                              <Minus className="h-4 w-4" />
+                              <span className="sr-only">Remover questão</span>
+                            </Button>
                           </div>
-                          
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeQuestion(question.id)}
-                            className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                          >
-                            <Minus className="h-4 w-4" />
-                            <span className="sr-only">Remover questão</span>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {/* Botões de ação */}
-            <div className="flex justify-between items-center pt-6">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/dashboard")}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleSaveAssessment}
-                disabled={!title || !description || !duration || !dueDate || questions.length === 0}
-                className="cyber-button"
-              >
-                Salvar Avaliação
-              </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-between items-center pt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/dashboard")}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSaveAssessment}
+                  disabled={loading || !title || !description || !duration || questions.length === 0}
+                  className="cyber-button"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : isEditMode ? (
+                    "Atualizar Avaliação"
+                  ) : (
+                    "Salvar Avaliação"
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </SecureAppShell>
   );
