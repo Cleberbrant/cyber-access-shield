@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -125,17 +126,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
     try {
       console.log("Iniciando registro com:", { email, password });
       
-      const { error: emailCheckError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false
-        }
-      });
-      
-      if (!emailCheckError || !emailCheckError.message.includes("Email not confirmed")) {
-        console.log("Email já cadastrado:", email);
-        throw new Error("Este email já está em uso. Por favor, tente outro email.");
-      }
+      // Removendo a verificação de email que estava causando problemas
+      // Vamos direto para o registro do usuário
       
       const { data, error } = await supabase.auth.signUp({
         email,
