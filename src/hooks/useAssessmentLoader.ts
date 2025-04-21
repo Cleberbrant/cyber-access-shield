@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Assessment, AssessmentQuestion } from "@/types/assessment";
+import { enableAssessmentProtection } from "@/utils/secure-utils";
 
 const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | undefined => {
   if (typeof obj === 'object' && obj !== null && key in obj) {
@@ -35,6 +36,9 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
       try {
         setLoading(true);
         
+        // Ativar proteções de ambiente de avaliação
+        enableAssessmentProtection();
+        
         // Buscar dados da avaliação
         const { data: assessmentData, error: assessmentError } = await supabase
           .from("assessments")
@@ -45,6 +49,10 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         if (assessmentError || !assessmentData) {
           throw new Error(assessmentError?.message || "Avaliação não encontrada");
         }
+
+        // Garantir que a duração seja um número positivo
+        const duration = Math.max(1, assessmentData.duration_minutes || 1);
+        console.log("Duração carregada:", duration, "minutos");
 
         // Buscar questões
         const { data: questionsData, error: questionsError } = await supabase
@@ -64,11 +72,10 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
           id: assessmentData.id,
           title: assessmentData.title,
           description: assessmentData.description || "",
-          duration: assessmentData.duration_minutes,
+          duration: duration,
           questions: formattedQuestions
         };
         
-        console.log("Duração carregada:", assessmentData.duration_minutes, "minutos");
         setAssessment(mappedAssessment);
         
         // Verificar sessão existente ou criar nova
