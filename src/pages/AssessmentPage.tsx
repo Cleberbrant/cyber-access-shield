@@ -100,31 +100,7 @@ export default function AssessmentPage() {
         }
 
         // Convert data to the expected format for the component
-        const formattedQuestions: AssessmentQuestion[] = questionsData.map(q => {
-          let question: AssessmentQuestion = {
-            id: q.id,
-            text: q.question_text,
-            type: mapQuestionType(q.question_type)
-          };
-
-          // Safely check and access JSON properties
-          if (q.options) {
-            if (q.question_type === "multiple_choice") {
-              const options = getJsonProperty<string[]>(q.options, 'options');
-              if (options) question.options = options;
-            } 
-            else if (q.question_type === "code") {
-              const code = getJsonProperty<string>(q.options, 'code');
-              if (code) question.code = code;
-            } 
-            else if (q.question_type === "matching") {
-              const matches = getJsonProperty<Array<{left: string, right: string}>>(q.options, 'matches');
-              if (matches) question.matches = matches;
-            }
-          }
-
-          return question;
-        });
+        const formattedQuestions: AssessmentQuestion[] = questionsData.map(mapQuestionType);
 
         const mappedAssessment: Assessment = {
           id: assessmentData.id,
@@ -173,18 +149,44 @@ export default function AssessmentPage() {
     fetchAssessment();
   }, [assessmentId, navigate, toast]);
   
-  // Helper to map question types from the database to the component format
-  const mapQuestionType = (dbType: string): AssessmentQuestion["type"] => {
-    const typeMap: Record<string, AssessmentQuestion["type"]> = {
-      "multiple_choice": "multiple-choice",
-      "true_false": "true-false",
-      "text": "short-answer",
-      "code": "code",
-      "matching": "matching"
-    };
-    
-    return typeMap[dbType as keyof typeof typeMap] || "multiple-choice";
+const mapQuestionType = (questao: any): AssessmentQuestion => {
+  const tipoBase: AssessmentQuestion = {
+    id: questao.id,
+    text: questao.question_text,
+    type: mapQuestionTypeString(questao.question_type)
   };
+
+  // Tratar diferentes tipos de questões
+  switch (questao.question_type) {
+    case 'multiple_choice':
+      const opcoes = getJsonProperty<string[]>(questao.options, 'options');
+      return opcoes ? { ...tipoBase, options: opcoes } : tipoBase;
+    
+    case 'code':
+      const codigo = getJsonProperty<string>(questao.options, 'code');
+      return codigo ? { ...tipoBase, code: codigo } : tipoBase;
+    
+    case 'matching':
+      const correspondencias = getJsonProperty<Array<{left: string, right: string}>>(questao.options, 'matches');
+      return correspondencias ? { ...tipoBase, matches: correspondencias } : tipoBase;
+    
+    default:
+      return tipoBase;
+  }
+};
+
+// Função auxiliar para mapear tipos de questões
+const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
+  const typeMap: Record<string, AssessmentQuestion["type"]> = {
+    "multiple_choice": "multiple-choice",
+    "true_false": "true-false",
+    "text": "short-answer",
+    "code": "code",
+    "matching": "matching"
+  };
+  
+  return typeMap[dbType] || "multiple-choice";
+};
 
   // Set up countdown timer
   useEffect(() => {
