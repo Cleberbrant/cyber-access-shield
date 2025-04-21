@@ -85,8 +85,10 @@ export default function Dashboard() {
         sessionId = data.id;
       }
       
-      // Navegar diretamente para a página de avaliação sem mostrar diálogo de confirmação
-      console.log("Iniciando avaliação, navegando para:", `/assessment/${assessmentId}?session=${sessionId}`);
+      // Definir localStorage diretamente aqui, sem mostrar diálogos
+      localStorage.setItem("assessmentInProgress", "true");
+      
+      // Navegar diretamente para a página de avaliação
       navigate(`/assessment/${assessmentId}?session=${sessionId}`);
     } catch (error: any) {
       console.error("Erro ao iniciar avaliação:", error);

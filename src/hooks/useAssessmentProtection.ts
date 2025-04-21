@@ -16,5 +16,6 @@ export function useAssessmentProtection() {
   useMouseProtection(isActive);
   useBeforeUnloadProtection(isAssessmentRoute);
 
+  // Remover a verificação adicional de beforeunload
   return { isAssessmentRoute };
 }

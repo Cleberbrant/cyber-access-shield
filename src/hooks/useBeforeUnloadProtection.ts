@@ -8,19 +8,15 @@ export function useBeforeUnloadProtection(isActive: boolean) {
       return;
     }
 
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      const isAssessmentInProgress = localStorage.getItem("assessmentInProgress");
-      if (isAssessmentInProgress === "true") {
-        e.preventDefault();
-        e.returnValue = "Você tem uma avaliação em andamento. Sair desta página pode resultar em perda de progresso.";
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    // Aqui anteriormente verificávamos ao sair da página, agora vamos 
+    // apenas configurar o localStorage sem mostrar diálogos de confirmação
+    localStorage.setItem("assessmentInProgress", "true");
     
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      // Limpar quando o componente for desmontado se não estiver mais ativo
+      if (!isActive) {
+        localStorage.removeItem("assessmentInProgress");
+      }
     };
   }, [isActive]);
 }
