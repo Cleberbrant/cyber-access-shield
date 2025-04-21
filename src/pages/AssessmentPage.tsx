@@ -1,251 +1,51 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { 
-  enableAssessmentProtection, 
-  disableAssessmentProtection,
-  preventNavigation,
-  sanitizeInput
-} from "@/utils/secure-utils";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Clock, ArrowLeft, ArrowRight } from "lucide-react";
+import { sanitizeInput } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
-import { Json } from "@/integrations/supabase/types";
 
-// Types
-interface AssessmentQuestion {
-  id: string;
-  type: "multiple-choice" | "true-false" | "short-answer" | "code" | "matching";
-  text: string;
-  options?: string[];
-  code?: string;
-  matches?: { left: string; right: string }[];
-}
+// Importar componentes de questões
+import { MultipleChoiceQuestion } from "@/components/assessment/question-types/MultipleChoiceQuestion";
+import { TrueFalseQuestion } from "@/components/assessment/question-types/TrueFalseQuestion";
+import { CodeQuestion } from "@/components/assessment/question-types/CodeQuestion";
+import { ShortAnswerQuestion } from "@/components/assessment/question-types/ShortAnswerQuestion";
+import { MatchingQuestion } from "@/components/assessment/question-types/MatchingQuestion";
 
-interface Assessment {
-  id: string;
-  title: string;
-  description: string;
-  duration: number; // in minutes
-  questions: AssessmentQuestion[];
-}
+// Importar componentes de layout
+import { AssessmentHeader } from "@/components/assessment/AssessmentHeader";
+import { QuestionNavigation } from "@/components/assessment/QuestionNavigation";
 
-// Helper function to safely access JSON fields
-const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | undefined => {
-  if (typeof obj === 'object' && obj !== null && key in obj) {
-    return obj[key] as unknown as T;
-  }
-  return undefined;
-};
+// Importar hooks personalizados
+import { useAssessmentLoader } from "@/hooks/useAssessmentLoader";
+import { useAssessmentTimer } from "@/hooks/useAssessmentTimer";
 
-// Main component
 export default function AssessmentPage() {
-  const navigate = useNavigate();
   const { assessmentId } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
-  // States
-  const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  // Estados locais
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [matchPairs, setMatchPairs] = useState<Record<string, string>>({});
-  const [sessionId, setSessionId] = useState<string | null>(null);
 
-  // Load assessment from Supabase
-  useEffect(() => {
-    const fetchAssessment = async () => {
-      if (!assessmentId) {
-        toast({
-          title: "Erro",
-          description: "ID da avaliação não encontrado.",
-          variant: "destructive"
-        });
-        navigate("/dashboard");
-        return;
-      }
-
-      try {
-        setLoading(true);
-        
-        // Fetch assessment data
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from("assessments")
-          .select("*")
-          .eq("id", assessmentId)
-          .single();
-          
-        if (assessmentError || !assessmentData) {
-          throw new Error(assessmentError?.message || "Avaliação não encontrada");
-        }
-
-        // Fetch assessment questions
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("questions")
-          .select("*")
-          .eq("assessment_id", assessmentId)
-          .order("order_index");
-          
-        if (questionsError) {
-          throw new Error(questionsError.message || "Erro ao carregar questões");
-        }
-
-        // Convert data to the expected format for the component
-        const formattedQuestions: AssessmentQuestion[] = questionsData.map(mapQuestionType);
-
-        const mappedAssessment: Assessment = {
-          id: assessmentData.id,
-          title: assessmentData.title,
-          description: assessmentData.description || "",
-          duration: assessmentData.duration_minutes,
-          questions: formattedQuestions
-        };
-        
-        setAssessment(mappedAssessment);
-        setTimeLeft(assessmentData.duration_minutes * 60); // Convert minutes to seconds
-        
-        // Create assessment session
-        const { data: userSession } = await supabase.auth.getSession();
-        if (userSession && userSession.session) {
-          const { data: sessionData, error: sessionError } = await supabase
-            .from("assessment_sessions")
-            .insert({
-              assessment_id: assessmentId,
-              user_id: userSession.session.user.id,
-              started_at: new Date().toISOString(),
-              is_completed: false
-            })
-            .select('id')
-            .single();
-            
-          if (sessionError) {
-            console.error("Erro ao criar sessão de avaliação:", sessionError);
-          } else if (sessionData) {
-            setSessionId(sessionData.id);
-          }
-        }
-      } catch (error: any) {
-        console.error("Erro ao carregar avaliação:", error);
-        toast({
-          title: "Erro",
-          description: error.message || "Não foi possível carregar a avaliação.",
-          variant: "destructive"
-        });
-        navigate("/dashboard");
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAssessment();
-  }, [assessmentId, navigate, toast]);
+  // Carregar dados da avaliação
+  const { assessment, loading, sessionId } = useAssessmentLoader(assessmentId);
   
-const mapQuestionType = (questao: any): AssessmentQuestion => {
-  const tipoBase: AssessmentQuestion = {
-    id: questao.id,
-    text: questao.question_text,
-    type: mapQuestionTypeString(questao.question_type)
-  };
+  // Configurar timer
+  const { formatTimeLeft } = useAssessmentTimer(
+    assessment?.duration || 0,
+    handleSubmitAssessment
+  );
 
-  // Tratar diferentes tipos de questões
-  switch (questao.question_type) {
-    case 'multiple_choice':
-      const opcoes = getJsonProperty<string[]>(questao.options, 'options');
-      return opcoes ? { ...tipoBase, options: opcoes } : tipoBase;
-    
-    case 'code':
-      const codigo = getJsonProperty<string>(questao.options, 'code');
-      return codigo ? { ...tipoBase, code: codigo } : tipoBase;
-    
-    case 'matching':
-      const correspondencias = getJsonProperty<Array<{left: string, right: string}>>(questao.options, 'matches');
-      return correspondencias ? { ...tipoBase, matches: correspondencias } : tipoBase;
-    
-    default:
-      return tipoBase;
-  }
-};
-
-// Função auxiliar para mapear tipos de questões
-const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
-  const typeMap: Record<string, AssessmentQuestion["type"]> = {
-    "multiple_choice": "multiple-choice",
-    "true_false": "true-false",
-    "text": "short-answer",
-    "code": "code",
-    "matching": "matching"
-  };
-  
-  return typeMap[dbType] || "multiple-choice";
-};
-
-  // Set up countdown timer
-  useEffect(() => {
-    if (!assessment || timeLeft <= 0) return;
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmitAssessment();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [assessment, timeLeft]);
-  
-  // Enable security protections when the assessment is loaded
-  useEffect(() => {
-    if (loading || !assessment) return;
-    
-    // Enable security protections
-    enableAssessmentProtection();
-    
-    // Prevent navigation away from the page
-    const removePreventNavigation = preventNavigation();
-    
-    return () => {
-      // Disable protections when the component is unmounted
-      disableAssessmentProtection();
-      removePreventNavigation();
-    };
-  }, [loading, assessment]);
-
-  // Format remaining time
-  const formatTimeLeft = useCallback(() => {
-    const minutes = Math.floor(timeLeft / 60);
-    const seconds = timeLeft % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }, [timeLeft]);
-  
-  // Handle navigation between questions
-  const goToNextQuestion = () => {
-    if (currentQuestionIndex < (assessment?.questions.length || 0) - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    }
-  };
-  
-  const goToPrevQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    }
-  };
-  
-  // Handle answers
-  const handleAnswerChange = (questionId: string, value: any) => {
-    // Sanitize inputs to prevent SQL Injection
+  // Handlers
+  const handleAnswerChange = async (questionId: string, value: any) => {
     const sanitizedValue = typeof value === 'string' ? sanitizeInput(value) : value;
     
     setAnswers(prev => ({
@@ -253,37 +53,12 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       [questionId]: sanitizedValue
     }));
     
-    // Save answer in the database
     if (sessionId) {
-      saveAnswer(questionId, sanitizedValue);
+      await saveAnswer(questionId, sanitizedValue);
     }
   };
-  
-  // Save answer to the database
-  const saveAnswer = async (questionId: string, answer: any) => {
-    if (!sessionId) return;
-    
-    try {
-      // Convert answer to string (if it's an object)
-      const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
-      
-      // Use upsert to create or update the answer
-      await supabase
-        .from("user_answers")
-        .upsert({
-          session_id: sessionId,
-          question_id: questionId,
-          answer: stringAnswer
-        }, {
-          onConflict: 'session_id,question_id'
-        });
-    } catch (error) {
-      console.error("Erro ao salvar resposta:", error);
-    }
-  };
-  
+
   const handleMatchPairChange = (questionId: string, leftItem: string, rightItem: string) => {
-    // Sanitize inputs
     const sanitizedLeftItem = sanitizeInput(leftItem);
     const sanitizedRightItem = sanitizeInput(rightItem);
     
@@ -292,19 +67,16 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       [sanitizedLeftItem]: sanitizedRightItem
     }));
     
-    // Update answers with all current pairs
     const allPairs = { ...matchPairs, [sanitizedLeftItem]: sanitizedRightItem };
     handleAnswerChange(questionId, allPairs);
   };
-  
-  // Handle assessment submission
-  const handleSubmitAssessment = async () => {
+
+  async function handleSubmitAssessment() {
     if (isSubmitting) return;
-    
     setIsSubmitting(true);
     
     try {
-      // Check if all questions have been answered
+      // Verificar questões não respondidas
       const unansweredQuestions = assessment?.questions.filter(q => !answers[q.id]);
       
       if (unansweredQuestions && unansweredQuestions.length > 0) {
@@ -319,21 +91,16 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       }
       
       if (sessionId) {
-        // Update session as complete
+        // Atualizar sessão como completa
         await supabase
           .from("assessment_sessions")
           .update({
             is_completed: true,
             completed_at: new Date().toISOString(),
-            // Preliminary score calculation could be done here if needed
           })
           .eq("id", sessionId);
       }
       
-      // Disable security protections
-      disableAssessmentProtection();
-      
-      // Redirect to results page
       navigate(`/assessment-result/${assessmentId}`);
       
       toast({
@@ -349,9 +116,29 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       });
       setIsSubmitting(false);
     }
-  };
-  
-  // Render the current question
+  }
+
+  async function saveAnswer(questionId: string, answer: any) {
+    if (!sessionId) return;
+    
+    try {
+      const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
+      
+      await supabase
+        .from("user_answers")
+        .upsert({
+          session_id: sessionId,
+          question_id: questionId,
+          answer: stringAnswer
+        }, {
+          onConflict: 'session_id,question_id'
+        });
+    } catch (error) {
+      console.error("Erro ao salvar resposta:", error);
+    }
+  }
+
+  // Renderizar questão atual
   const renderCurrentQuestion = () => {
     if (!assessment) return null;
     
@@ -362,114 +149,49 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       <div className="space-y-4">
         <h3 className="text-lg font-medium">{question.text}</h3>
         
-        {question.type === "multiple-choice" && (
-          <RadioGroup
+        {question.type === "multiple-choice" && question.options && (
+          <MultipleChoiceQuestion
+            id={question.id}
+            options={question.options}
             value={answers[question.id]?.toString()}
-            onValueChange={(value) => handleAnswerChange(question.id, parseInt(value))}
-            className="space-y-3"
-          >
-            {question.options?.map((option, index) => (
-              <div key={index} className="flex items-start space-x-2">
-                <RadioGroupItem value={index.toString()} id={`q${question.id}-option-${index}`} />
-                <Label htmlFor={`q${question.id}-option-${index}`} className="text-base">
-                  {option}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        )}
-        
-        {question.type === "true-false" && (
-          <RadioGroup
-            value={answers[question.id]?.toString()}
-            onValueChange={(value) => handleAnswerChange(question.id, value === "true")}
-          >
-            <div className="flex space-x-8">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="true" id={`q${question.id}-true`} />
-                <Label htmlFor={`q${question.id}-true`}>Verdadeiro</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="false" id={`q${question.id}-false`} />
-                <Label htmlFor={`q${question.id}-false`}>Falso</Label>
-              </div>
-            </div>
-          </RadioGroup>
-        )}
-        
-        {question.type === "short-answer" && (
-          <Textarea
-            value={answers[question.id] || ""}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-            placeholder="Sua resposta"
-            className="min-h-[120px]"
+            onChange={(value) => handleAnswerChange(question.id, value)}
           />
         )}
         
-        {question.type === "code" && (
-          <div className="space-y-3">
-            <div className="rounded-md border bg-muted/50 p-3">
-              <pre className="text-sm font-mono whitespace-pre-wrap">{question.code}</pre>
-            </div>
-            <Textarea
-              value={answers[question.id] || ""}
-              onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-              placeholder="Digite seu código aqui"
-              className="min-h-[150px] font-mono"
-            />
-          </div>
+        {question.type === "true-false" && (
+          <TrueFalseQuestion
+            id={question.id}
+            value={answers[question.id]?.toString()}
+            onChange={(value) => handleAnswerChange(question.id, value)}
+          />
+        )}
+        
+        {question.type === "short-answer" && (
+          <ShortAnswerQuestion
+            value={answers[question.id]}
+            onChange={(value) => handleAnswerChange(question.id, value)}
+          />
+        )}
+        
+        {question.type === "code" && question.code && (
+          <CodeQuestion
+            code={question.code}
+            value={answers[question.id]}
+            onChange={(value) => handleAnswerChange(question.id, value)}
+          />
         )}
         
         {question.type === "matching" && question.matches && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Itens</Label>
-                <div className="space-y-2">
-                  {question.matches.map((match, index) => (
-                    <Card key={`left-${index}`} className="border-dashed">
-                      <CardContent className="p-3">
-                        <div className="flex items-center justify-between">
-                          <span>{match.left}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Correspondências</Label>
-                <div className="space-y-2">
-                  {question.matches.map((match, index) => (
-                    <div key={`right-${index}`} className="relative">
-                      <select
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        value={matchPairs[question.matches?.[index].left || ""] || ""}
-                        onChange={(e) => handleMatchPairChange(
-                          question.id,
-                          question.matches?.[index].left || "",
-                          e.target.value
-                        )}
-                      >
-                        <option value="">Selecione uma correspondência</option>
-                        {question.matches?.map((match, idx) => (
-                          <option key={idx} value={match.right}>
-                            {match.right}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <MatchingQuestion
+            matches={question.matches}
+            value={answers[question.id]}
+            onChange={(leftItem, rightItem) => handleMatchPairChange(question.id, leftItem, rightItem)}
+          />
         )}
       </div>
     );
   };
-  
+
   if (loading) {
     return (
       <SecureAppShell>
@@ -484,7 +206,7 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       </SecureAppShell>
     );
   }
-  
+
   if (!assessment) {
     return (
       <SecureAppShell>
@@ -505,39 +227,18 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
       </SecureAppShell>
     );
   }
-  
+
   return (
     <SecureAppShell>
       <div className="container py-8">
-        {/* Cabeçalho da avaliação */}
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold">{assessment.title}</h1>
-              <p className="text-muted-foreground">{assessment.description}</p>
-            </div>
-            
-            <div className="flex items-center gap-2 bg-card p-2 rounded-md border shadow">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <span className="text-lg font-medium">{formatTimeLeft()}</span>
-            </div>
-          </div>
-          
-          <div className="mt-4">
-            <Progress 
-              value={(currentQuestionIndex + 1) / assessment.questions.length * 100} 
-              className="h-2"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>Questão {currentQuestionIndex + 1} de {assessment.questions.length}</span>
-              <span>
-                {Math.round((currentQuestionIndex + 1) / assessment.questions.length * 100)}% concluído
-              </span>
-            </div>
-          </div>
-        </div>
+        <AssessmentHeader
+          title={assessment.title}
+          description={assessment.description}
+          timeLeft={formatTimeLeft()}
+          currentQuestion={currentQuestionIndex}
+          totalQuestions={assessment.questions.length}
+        />
         
-        {/* Conteúdo da questão */}
         <Card className="mb-6 secure-content no-select">
           <CardHeader>
             <CardTitle>Questão {currentQuestionIndex + 1}</CardTitle>
@@ -548,7 +249,7 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
           <CardFooter className="flex justify-between">
             <Button
               variant="outline"
-              onClick={goToPrevQuestion}
+              onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
               disabled={currentQuestionIndex === 0}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -563,7 +264,9 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
               >
                 {isSubmitting ? (
                   <>
-                    <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                    <div className="h-4 w-4 mr-2 animate 
+
+-spin rounded-full border-2 border-current border-t-transparent"></div>
                     Enviando...
                   </>
                 ) : (
@@ -572,7 +275,7 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
               </Button>
             ) : (
               <Button 
-                onClick={goToNextQuestion}
+                onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
                 disabled={currentQuestionIndex === assessment.questions.length - 1}
               >
                 Próxima
@@ -582,27 +285,14 @@ const mapQuestionTypeString = (dbType: string): AssessmentQuestion["type"] => {
           </CardFooter>
         </Card>
         
-        {/* Navegação rápida pelas questões */}
-        <div className="mb-6">
-          <h3 className="text-sm font-medium mb-2">Navegação rápida:</h3>
-          <div className="flex flex-wrap gap-2">
-            {assessment.questions.map((_, index) => (
-              <Button
-                key={index}
-                variant={index === currentQuestionIndex ? "default" : 
-                       answers[assessment.questions[index].id] ? "outline" : "ghost"}
-                size="sm"
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={index === currentQuestionIndex ? "" : 
-                        answers[assessment.questions[index].id] ? "border-primary/50" : "border-dashed"}
-              >
-                {index + 1}
-              </Button>
-            ))}
-          </div>
-        </div>
+        <QuestionNavigation
+          currentQuestion={currentQuestionIndex}
+          totalQuestions={assessment.questions.length}
+          answers={answers}
+          questionsMap={assessment.questions.map(q => q.id)}
+          onQuestionChange={setCurrentQuestionIndex}
+        />
         
-        {/* Botão de finalizar */}
         <div className="flex justify-end">
           <Button
             onClick={handleSubmitAssessment}
