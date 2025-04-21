@@ -5,6 +5,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { enableAssessmentProtection, disableAssessmentProtection } from "@/utils/secure-utils";
 
 interface SecureAppShellProps {
   children: React.ReactNode;
@@ -17,27 +19,42 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
   
   // Verificar autenticação
   useEffect(() => {
-    const checkAuth = () => {
-      const userStr = localStorage.getItem("user");
-      if (!userStr) {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
         navigate("/login");
         return;
       }
       
-      try {
-        const userData = JSON.parse(userStr);
-        setUser(userData);
-      } catch (error) {
-        console.error("Erro ao analisar dados do usuário:", error);
-        localStorage.removeItem("user");
-        navigate("/login");
+      // Buscar informações do perfil
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('full_name, is_admin')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (error || !profile) {
+        console.error("Erro ao buscar perfil:", error);
+        return;
       }
+      
+      setUser({
+        email: session.user.email || '',
+        isAdmin: profile.is_admin
+      });
     };
     
     checkAuth();
     
+    // Configurar listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/login");
+      }
+    });
+    
     // Esta função previne que o usuário saia da tela durante uma avaliação
-    // Vamos implementar isso como uma demonstração de segurança
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       const isAssessmentInProgress = localStorage.getItem("assessmentInProgress");
       if (isAssessmentInProgress === "true") {
@@ -50,6 +67,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     window.addEventListener("beforeunload", handleBeforeUnload);
     
     return () => {
+      subscription.unsubscribe();
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [navigate]);
@@ -136,7 +154,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
     };
   }, [toast]);
   
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const isAssessmentInProgress = localStorage.getItem("assessmentInProgress") === "true";
     
     if (isAssessmentInProgress) {
@@ -148,7 +166,11 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       return;
     }
     
-    localStorage.removeItem("user");
+    // Desabilitar proteções caso estejam ativas
+    disableAssessmentProtection();
+    
+    // Fazer logout do Supabase
+    await supabase.auth.signOut();
     navigate("/login");
   };
   

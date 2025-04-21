@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 // Esquema de validação para formulários
 const loginSchema = z.object({
@@ -47,6 +48,18 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Verificar se já está logado
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate("/dashboard");
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
   const validateForm = () => {
     try {
       if (type === "login") {
@@ -69,34 +82,82 @@ export function AuthForm({ type, className }: AuthFormProps) {
     }
   };
 
-  const simulateAuth = async () => {
-    // Simulação de autenticação para demonstração
+  const handleLogin = async () => {
     setIsLoading(true);
-    // Simula uma chamada de API
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    // Para fins de demonstração, simulamos um login bem-sucedido
-    // Em produção, isso seria substituído por uma chamada de API real
-    const isAdmin = email.includes("admin");
-    
-    // Armazenar informações do usuário no localStorage
-    // NOTA: Em produção, isso deve ser feito com tokens JWT ou similar
-    localStorage.setItem("user", JSON.stringify({
-      email,
-      isAdmin,
-      token: "demo-token-" + Math.random().toString(36).substring(2),
-    }));
-    
-    setIsLoading(false);
-    
-    // Notificar o usuário
-    toast({
-      title: type === "login" ? "Login bem-sucedido" : "Cadastro concluído",
-      description: "Redirecionando para o dashboard...",
-    });
-    
-    // Redirecionar para o dashboard
-    navigate("/dashboard");
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Login bem-sucedido",
+        description: "Redirecionando para o dashboard...",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Erro ao fazer login:", error);
+      
+      setErrors({
+        form: error.message || "Erro ao fazer login. Verifique suas credenciais."
+      });
+      
+      toast({
+        title: "Erro ao fazer login",
+        description: error.message || "Verifique suas credenciais e tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRegister = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: email.split('@')[0], // Nome padrão baseado no email
+            avatar_url: "",
+            is_admin: false // Por padrão, novos usuários não são administradores
+          }
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Registro bem-sucedido",
+        description: "Verifique seu email para confirmar o cadastro.",
+      });
+
+      // Redirecionar para a página de login após o cadastro
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Erro ao registrar:", error);
+      
+      setErrors({
+        form: error.message || "Erro ao registrar. Tente novamente mais tarde."
+      });
+      
+      toast({
+        title: "Erro ao registrar",
+        description: error.message || "Verifique os dados e tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,13 +167,10 @@ export function AuthForm({ type, className }: AuthFormProps) {
     // Validar o formulário
     if (!validateForm()) return;
     
-    try {
-      await simulateAuth();
-    } catch (error) {
-      console.error(error);
-      setErrors({
-        form: "Ocorreu um erro. Tente novamente mais tarde."
-      });
+    if (type === "login") {
+      await handleLogin();
+    } else {
+      await handleRegister();
     }
   };
 
