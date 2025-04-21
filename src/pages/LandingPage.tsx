@@ -82,7 +82,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-center">
                 <div className="relative w-full aspect-square md:aspect-[4/3] overflow-hidden rounded-lg border secure-element">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-cyber-blue/20 to-cyber-teal/20 backdrop-blur-sm">
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#0A84FF] to-[#00D1C5] flex items-center justify-center">
                     <Shield className="w-32 h-32 text-white" />
                   </div>
                 </div>
