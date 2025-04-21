@@ -1,10 +1,13 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { enableAssessmentProtection, disableAssessmentProtection } from "@/utils/secure-utils";
 
 // Importar componentes
 import { AssessmentHeader } from "@/components/assessment/AssessmentHeader";
@@ -21,6 +24,7 @@ export default function AssessmentPage() {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const { toast } = useToast();
   
   // Carregar dados da avaliação
   const { assessment, loading, sessionId } = useAssessmentLoader(assessmentId);
@@ -34,6 +38,24 @@ export default function AssessmentPage() {
     assessment?.duration || 0,
     () => assessment && handleSubmitAssessment(answers, assessment.questions)
   );
+
+  // Ativar proteções de segurança quando o componente for montado
+  useEffect(() => {
+    // Ativar proteções de segurança
+    enableAssessmentProtection();
+
+    // Notificar o usuário
+    toast({
+      title: "Modo Avaliação Ativado",
+      description: "Proteções de segurança foram ativadas para a avaliação.",
+      duration: 4000
+    });
+
+    // Limpar quando o componente for desmontado
+    return () => {
+      disableAssessmentProtection();
+    };
+  }, [toast]);
 
   if (loading) {
     return (
