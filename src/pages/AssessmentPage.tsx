@@ -122,19 +122,28 @@ export default function AssessmentPage() {
     if (!sessionId) return;
     
     try {
+      // Garante que answer seja uma string, mesmo se for um objeto
       const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
       
-      await supabase
+      // Garantir que os dados estejam no formato esperado
+      const answerData = {
+        session_id: sessionId,
+        question_id: questionId,
+        answer: stringAnswer
+      };
+      
+      // Usar o método upsert com a configuração onConflict correta
+      const { error } = await supabase
         .from("user_answers")
-        .upsert({
-          session_id: sessionId,
-          question_id: questionId,
-          answer: stringAnswer
-        }, {
+        .upsert(answerData, {
           onConflict: 'session_id,question_id'
         });
+      
+      if (error) {
+        console.error("Erro ao salvar resposta:", error);
+      }
     } catch (error) {
-      console.error("Erro ao salvar resposta:", error);
+      console.error("Erro ao processar resposta:", error);
     }
   }
 
