@@ -36,6 +36,9 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
       try {
         setLoading(true);
         
+        // Garantir que a flag está configurada ao iniciar carregamento
+        localStorage.setItem("assessmentInProgress", "true");
+        
         // Ativar proteções de ambiente de avaliação
         enableAssessmentProtection();
         

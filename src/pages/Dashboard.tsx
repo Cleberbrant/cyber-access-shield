@@ -88,8 +88,11 @@ export default function Dashboard() {
       // Definir localStorage diretamente aqui, sem mostrar diálogos
       localStorage.setItem("assessmentInProgress", "true");
       
-      // Navegar diretamente para a página de avaliação
-      navigate(`/assessment/${assessmentId}?session=${sessionId}`);
+      // Adicionar um pequeno atraso antes de navegar
+      setTimeout(() => {
+        navigate(`/assessment/${assessmentId}?session=${sessionId}`);
+        console.log("Navegando para:", `/assessment/${assessmentId}?session=${sessionId}`);
+      }, 100);
     } catch (error: any) {
       console.error("Erro ao iniciar avaliação:", error);
       toast({
