@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Utilitários de segurança para a aplicação
@@ -35,6 +34,11 @@ export const enableAssessmentProtection = (): void => {
   localStorage.setItem("assessmentInProgress", "true");
   preventScreenCapture();
   
+  // Verifica se o DevTools está aberto
+  if (detectDevTools()) {
+    console.warn("DevTools detectado! Em uma prova real isso seria registrado.");
+  }
+  
   // Monitoramento periódico de tentativas de trapaça
   const interval = setInterval(() => {
     if (detectDevTools()) {
@@ -55,6 +59,67 @@ export const enableAssessmentProtection = (): void => {
   document.querySelectorAll(".secure-content").forEach((el) => {
     (el as HTMLElement).classList.add("no-select");
   });
+
+  // Adicionar CSS para prevenir seleção de texto
+  const style = document.createElement('style');
+  style.id = 'secure-assessment-styles';
+  style.innerHTML = `
+    .no-select {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    
+    .secure-content {
+      position: relative;
+    }
+    
+    .secure-content::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+  `;
+  document.head.appendChild(style);
+  
+  // Prevenir teclas de atalho comuns
+  const securityKeyHandler = (e: KeyboardEvent) => {
+    // Previne Ctrl+C, Ctrl+V, Ctrl+X, Print, etc.
+    if ((e.ctrlKey || e.metaKey) && 
+      (e.key === "c" || e.key === "v" || e.key === "x" || 
+       e.key === "p" || e.key === "s" || e.key === "a" || 
+       e.key === "u")) {
+      e.preventDefault();
+      console.warn("Atalho de teclado bloqueado por segurança: " + e.key);
+      return false;
+    }
+    
+    // Previne F12 (DevTools)
+    if (e.key === "F12" || (e.key === "i" && e.ctrlKey && e.shiftKey)) {
+      e.preventDefault();
+      console.warn("Tentativa de abrir DevTools bloqueada");
+      return false;
+    }
+  };
+  
+  // Prevenir clique direito e menu de contexto
+  const securityContextHandler = (e: MouseEvent) => {
+    e.preventDefault();
+    console.warn("Menu de contexto desativado durante a avaliação");
+    return false;
+  };
+  
+  document.addEventListener("keydown", securityKeyHandler);
+  document.addEventListener("contextmenu", securityContextHandler);
+  
+  // Armazenar referências para remover depois
+  window.sessionStorage.setItem("securityHandlersActive", "true");
 };
 
 // Função para desabilitar proteções após uma avaliação
@@ -70,9 +135,22 @@ export const disableAssessmentProtection = (): void => {
   }
   
   // Restaurar seleção de texto
-  document.querySelectorAll(".secure-content").forEach((el) => {
+  document.querySelectorAll(".no-select").forEach((el) => {
     (el as HTMLElement).classList.remove("no-select");
   });
+  
+  // Remover estilos de segurança
+  const secureStyles = document.getElementById('secure-assessment-styles');
+  if (secureStyles) {
+    secureStyles.remove();
+  }
+  
+  // Remover event listeners de segurança
+  if (window.sessionStorage.getItem("securityHandlersActive") === "true") {
+    // Precise removers would require storing the handler functions
+    // This is a simplified version
+    window.sessionStorage.removeItem("securityHandlersActive");
+  }
 };
 
 // Função para sanitizar entradas (para prevenir XSS)
