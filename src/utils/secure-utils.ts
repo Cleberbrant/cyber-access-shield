@@ -34,6 +34,25 @@ export const enableAssessmentProtection = (): void => {
   localStorage.setItem("assessmentInProgress", "true");
   preventScreenCapture();
   
+  // Fechar DevTools se estiver aberto
+  if (detectDevTools()) {
+    console.warn("DevTools detectado! Em uma prova real isso seria registrado.");
+    window.location.href = "/dashboard";
+    return;
+  }
+  
+  // Monitoramento preventivo antes de entrar na avaliação
+  const preventiveCheck = setInterval(() => {
+    if (detectDevTools()) {
+      clearInterval(preventiveCheck);
+      window.location.href = "/dashboard";
+      return;
+    }
+  }, 500);
+  
+  // Guardar o ID do intervalo para limpeza posterior
+  window.sessionStorage.setItem("preventiveCheckId", preventiveCheck.toString());
+  
   // Verifica se o DevTools está aberto
   if (detectDevTools()) {
     console.warn("DevTools detectado! Em uma prova real isso seria registrado.");
@@ -126,6 +145,13 @@ export const enableAssessmentProtection = (): void => {
 export const disableAssessmentProtection = (): void => {
   localStorage.removeItem("assessmentInProgress");
   allowScreenCapture();
+  
+  // Limpar o intervalo de verificação preventiva
+  const preventiveCheckId = window.sessionStorage.getItem("preventiveCheckId");
+  if (preventiveCheckId) {
+    clearInterval(parseInt(preventiveCheckId));
+    window.sessionStorage.removeItem("preventiveCheckId");
+  }
   
   // Limpar o intervalo de monitoramento
   const intervalId = window.sessionStorage.getItem("securityIntervalId");
