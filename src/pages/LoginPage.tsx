@@ -59,7 +59,7 @@ export default function LoginPage() {
               className="flex items-center gap-2"
             >
               <Shield className="h-6 w-6 text-cyber-blue" />
-              <span className="font-bold text-xl">CyberAssessShield</span>
+              <span className="font-bold text-xl">CyberAccessShield</span>
             </Button>
             <ThemeToggle />
           </div>
@@ -76,7 +76,7 @@ export default function LoginPage() {
         <footer className="border-t py-6">
           <div className="container">
             <p className="text-center text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} CyberAssessShield. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
             </p>
           </div>
         </footer>

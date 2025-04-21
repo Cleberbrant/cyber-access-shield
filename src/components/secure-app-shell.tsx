@@ -180,7 +180,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">CyberAssessShield</span>
+            <span className="font-bold text-xl">CyberAccessShield</span>
           </div>
           
           <div className="flex items-center gap-4">
@@ -209,7 +209,7 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
       <footer className="border-t py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} CyberAssessShield. Todos os direitos reservados.
+            &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
           </p>
           <p className="text-xs text-muted-foreground">
             Plataforma de avaliação segura para ambientes EAD
