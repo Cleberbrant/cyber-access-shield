@@ -6,15 +6,7 @@ export function useMouseProtection(isActive: boolean) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const handleMouseLeave = (e: MouseEvent) => {
-      if (isActive && e.clientY <= 0) {
-        toast({
-          title: "Ação Bloqueada",
-          description: "Por favor, mantenha o foco na avaliação.",
-          variant: "destructive"
-        });
-      }
-    };
+    // Removendo o evento de mouse leave para evitar o popup
     
     const handleContextMenu = (e: MouseEvent) => {
       if (isActive) {
@@ -28,11 +20,10 @@ export function useMouseProtection(isActive: boolean) {
       }
     };
     
-    document.addEventListener("mouseleave", handleMouseLeave);
+    // Mantemos apenas o bloqueio do menu de contexto, mas removemos o evento mouseleave
     document.addEventListener("contextmenu", handleContextMenu);
     
     return () => {
-      document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("contextmenu", handleContextMenu);
     };
   }, [isActive, toast]);
