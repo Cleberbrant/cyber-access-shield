@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -11,7 +10,6 @@ import { PasswordInput } from "./auth-form/PasswordInput";
 import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
 import { AuthFormFooter } from "./auth-form/AuthFormFooter";
 
-// Esquema de validação para formulários
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
   password: z.string().min(8, { message: "A senha deve ter pelo menos 8 caracteres" }),
@@ -44,11 +42,12 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [resentEmail, setResentEmail] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Verificar se já está logado
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -83,6 +82,37 @@ export function AuthForm({ type, className }: AuthFormProps) {
     }
   };
 
+  const handleResendConfirmationEmail = async () => {
+    setResendLoading(true);
+    setResentEmail(false);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+      });
+      if (error) {
+        toast({
+          title: "Erro ao reenviar e-mail",
+          description: error.message || "Não foi possível reenviar o e-mail de confirmação.",
+          variant: "destructive",
+        });
+      } else {
+        setResentEmail(true);
+        toast({
+          title: "Confirmação enviada",
+          description: "Verifique sua caixa de entrada e o spam.",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Erro ao reenviar e-mail",
+        description: e.message,
+        variant: "destructive",
+      });
+    }
+    setResendLoading(false);
+  };
+
   const handleLogin = async () => {
     setIsLoading(true);
     try {
@@ -94,6 +124,14 @@ export function AuthForm({ type, className }: AuthFormProps) {
 
       if (error) {
         console.error("Erro de autenticação:", error);
+
+        if (error.message === "Email not confirmed" || error.code === "email_not_confirmed") {
+          setErrors({
+            form: "Você precisa confirmar seu e-mail antes de fazer login. Verifique sua caixa de entrada e o spam!"
+          });
+          return;
+        }
+
         throw error;
       }
 
@@ -106,7 +144,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Erro ao fazer login:", error);
-      
+
       setErrors({
         form: error.message || "Erro ao fazer login. Verifique suas credenciais."
       });
@@ -125,9 +163,6 @@ export function AuthForm({ type, className }: AuthFormProps) {
     setIsLoading(true);
     try {
       console.log("Iniciando registro com:", { email, password });
-      
-      // Removendo a verificação de email que estava causando problemas
-      // Vamos direto para o registro do usuário
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -268,8 +303,25 @@ export function AuthForm({ type, className }: AuthFormProps) {
           )}
 
           {errors.form && (
-            <div className="rounded-md bg-destructive/15 p-3">
+            <div className="rounded-md bg-destructive/15 p-3 space-y-2">
               <p className="text-sm font-medium text-destructive">{errors.form}</p>
+              {errors.form.toLowerCase().includes("confirmar seu e-mail") && (
+                <div className="flex flex-col items-start gap-2">
+                  <button
+                    type="button"
+                    className="text-sm text-primary underline disabled:opacity-50"
+                    onClick={handleResendConfirmationEmail}
+                    disabled={resendLoading || resentEmail}
+                  >
+                    {resendLoading ? "Reenviando..." : (resentEmail ? "E-mail reenviado!" : "Reenviar e-mail de confirmação")}
+                  </button>
+                  {resentEmail && (
+                    <span className="text-xs text-muted-foreground">
+                      Caso não apareça, verifique o spam ou aguarde alguns minutos.
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>
