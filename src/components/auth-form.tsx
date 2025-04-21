@@ -67,6 +67,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
       } else {
         registerSchema.parse({ email, password, confirmPassword });
       }
+      setErrors({});
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -85,15 +86,18 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
+      console.log("Tentando login com:", email, password);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error("Erro de autenticação:", error);
         throw error;
       }
 
+      console.log("Login bem-sucedido:", data);
       toast({
         title: "Login bem-sucedido",
         description: "Redirecionando para o dashboard...",
@@ -123,18 +127,14 @@ export function AuthForm({ type, className }: AuthFormProps) {
       // Adiciona logs para depuração
       console.log("Iniciando registro com:", { email, password });
       
-      // Primeiro, verificar se o usuário já existe
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', email)
-        .maybeSingle();
-      
-      if (checkError) {
-        console.log("Erro ao verificar usuário existente:", checkError);
-      }
+      // Verificar se o email já está em uso
+      const { data: { user: existingUser }, error: userError } = await supabase.auth.admin.getUserByEmail(email).catch(() => {
+        // Ignorar erro aqui, pois o usuário provavelmente não existe
+        return { data: { user: null }, error: null };
+      });
       
       if (existingUser) {
+        console.log("Email já cadastrado:", email);
         throw new Error("Este email já está em uso. Por favor, tente outro email.");
       }
       
@@ -165,6 +165,24 @@ export function AuthForm({ type, className }: AuthFormProps) {
             ? "Sua conta foi criada com sucesso! Redirecionando..." 
             : "Verifique seu email para confirmar o cadastro.",
         });
+
+        // Inserir o registro na tabela profiles
+        if (data.user.id) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                full_name: email.split('@')[0],
+                avatar_url: "",
+                is_admin: false
+              }
+            ]);
+            
+          if (profileError) {
+            console.error("Erro ao criar perfil:", profileError);
+          }
+        }
 
         // Se houver uma sessão ativa, significa que não precisa de confirmação de email
         if (data.session) {
@@ -373,6 +391,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
               <p>
                 Não tem uma conta?{" "}
                 <Button 
+                  type="button"
                   variant="link" 
                   className="h-auto p-0 text-primary" 
                   onClick={() => navigate("/register")}
@@ -385,6 +404,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
               <p>
                 Já tem uma conta?{" "}
                 <Button 
+                  type="button"
                   variant="link" 
                   className="h-auto p-0 text-primary" 
                   onClick={() => navigate("/login")}
