@@ -231,7 +231,7 @@ export default function LandingPage() {
             &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
           </p>
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            Desenvolvido como projeto de TCC em Engenharia de Software
+            Desenvolvido por Cleber Brant e Pedro Rodrigues
           </p>
         </div>
       </footer>
