@@ -127,18 +127,18 @@ export function AuthForm({ type, className }: AuthFormProps) {
       // Adiciona logs para depuração
       console.log("Iniciando registro com:", { email, password });
       
-      // Verificar se o email já está em uso usando o método signUp com opção shouldCreateUser: false
-      // Esta é uma forma segura de verificar se um email já está em uso
-      const { error: emailCheckError } = await supabase.auth.signUp({
+      // Verificar se o email já está em uso usando uma consulta SELECT na tabela auth.users
+      // Como não podemos acessar diretamente a tabela auth.users, vamos tentar fazer login
+      // com o email para ver se o usuário já existe, sem criar um novo usuário
+      const { error: emailCheckError } = await supabase.auth.signInWithOtp({
         email,
-        password,
         options: {
-          shouldCreateUser: false
+          shouldCreateUser: false // Esta opção é suportada pelo signInWithOtp
         }
       });
       
-      // Se o erro contém "User already registered", então o email já está em uso
-      if (emailCheckError && emailCheckError.message.includes("User already registered")) {
+      // Se não houver erro específico indicando que o usuário não existe, assumimos que ele existe
+      if (!emailCheckError || !emailCheckError.message.includes("Email not confirmed")) {
         console.log("Email já cadastrado:", email);
         throw new Error("Este email já está em uso. Por favor, tente outro email.");
       }
