@@ -120,6 +120,9 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleRegister = async () => {
     setIsLoading(true);
     try {
+      // Adiciona logs para depuração
+      console.log("Iniciando registro com:", { email, password });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -128,21 +131,36 @@ export function AuthForm({ type, className }: AuthFormProps) {
             full_name: email.split('@')[0], // Nome padrão baseado no email
             avatar_url: "",
             is_admin: false // Por padrão, novos usuários não são administradores
-          }
+          },
+          // Remove o emailRedirectTo para evitar redirecionamentos desnecessários
         }
       });
+
+      console.log("Resposta do registro:", { data, error });
 
       if (error) {
         throw error;
       }
 
-      toast({
-        title: "Registro bem-sucedido",
-        description: "Verifique seu email para confirmar o cadastro.",
-      });
+      // Verifica se o usuário foi criado com sucesso
+      if (data && data.user) {
+        toast({
+          title: "Registro bem-sucedido",
+          description: data.session 
+            ? "Sua conta foi criada com sucesso! Redirecionando..." 
+            : "Verifique seu email para confirmar o cadastro.",
+        });
 
-      // Redirecionar para a página de login após o cadastro
-      navigate("/login");
+        // Se houver uma sessão ativa, significa que não precisa de confirmação de email
+        if (data.session) {
+          navigate("/dashboard");
+        } else {
+          // Caso contrário, redireciona para a página de login
+          navigate("/login");
+        }
+      } else {
+        throw new Error("Não foi possível criar a conta. Tente novamente mais tarde.");
+      }
     } catch (error: any) {
       console.error("Erro ao registrar:", error);
       
@@ -163,6 +181,9 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    
+    // Adiciona log para depuração
+    console.log("Formulário enviado:", { type, email, password, confirmPassword });
     
     // Validar o formulário
     if (!validateForm()) return;
