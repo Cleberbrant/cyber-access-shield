@@ -15,6 +15,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { assessments, loading } = useAssessments();
   const [isUserAdmin, setIsUserAdmin] = useState(false);
+  const [isStartingAssessment, setIsStartingAssessment] = useState(false);
   
   useEffect(() => {
     // Garantir que qualquer proteção ativa seja removida ao acessar o Dashboard
@@ -34,6 +35,10 @@ export default function Dashboard() {
   
   const handleStartAssessment = async (assessmentId: string) => {
     try {
+      // Prevenir múltiplos cliques
+      if (isStartingAssessment) return;
+      setIsStartingAssessment(true);
+      
       // Verificar se o usuário já tem uma sessão em andamento para esta avaliação
       const { data: existingSessions, error: checkError } = await supabase
         .from('assessment_sessions')
@@ -88,11 +93,10 @@ export default function Dashboard() {
       // Definir localStorage diretamente aqui, sem mostrar diálogos
       localStorage.setItem("assessmentInProgress", "true");
       
-      // Adicionar um pequeno atraso antes de navegar
-      setTimeout(() => {
-        navigate(`/assessment/${assessmentId}?session=${sessionId}`);
-        console.log("Navegando para:", `/assessment/${assessmentId}?session=${sessionId}`);
-      }, 100);
+      // Navegar para a página de avaliação com timestamp para evitar cache
+      console.log("Navegando para:", `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`);
+      navigate(`/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`);
+      
     } catch (error: any) {
       console.error("Erro ao iniciar avaliação:", error);
       toast({
@@ -100,6 +104,7 @@ export default function Dashboard() {
         description: "Não foi possível iniciar a avaliação. Tente novamente.",
         variant: "destructive"
       });
+      setIsStartingAssessment(false);
     }
   };
 

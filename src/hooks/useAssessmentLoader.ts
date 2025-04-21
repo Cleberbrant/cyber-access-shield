@@ -18,6 +18,7 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(existingSessionId);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -35,38 +36,74 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
 
       try {
         setLoading(true);
+        setLoadError(null);
         
         // Garantir que a flag está configurada ao iniciar carregamento
         localStorage.setItem("assessmentInProgress", "true");
         
         // Ativar proteções de ambiente de avaliação
         enableAssessmentProtection();
-        
-        // Buscar dados da avaliação
-        const { data: assessmentData, error: assessmentError } = await supabase
-          .from("assessments")
-          .select("*")
-          .eq("id", assessmentId)
-          .single();
-          
-        if (assessmentError || !assessmentData) {
-          throw new Error(assessmentError?.message || "Avaliação não encontrada");
-        }
 
+        // Usar Promise.race para implementar um timeout na requisição
+        const fetchWithTimeout = async () => {
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Tempo limite excedido")), 15000)
+          );
+          
+          // Buscar dados da avaliação
+          const assessmentPromise = supabase
+            .from("assessments")
+            .select("*")
+            .eq("id", assessmentId)
+            .single();
+            
+          // Promise.race irá resolver com o que terminar primeiro
+          const { data: assessmentData, error: assessmentError } = await Promise.race([
+            assessmentPromise,
+            timeoutPromise
+          ]) as any;
+          
+          if (assessmentError || !assessmentData) {
+            throw new Error(assessmentError?.message || "Avaliação não encontrada");
+          }
+
+          return assessmentData;
+        };
+
+        // Buscar dados da avaliação com timeout
+        const assessmentData = await fetchWithTimeout();
+        
         // Garantir que a duração seja um número positivo
         const duration = Math.max(1, assessmentData.duration_minutes || 1);
         console.log("Duração carregada:", duration, "minutos");
 
-        // Buscar questões
-        const { data: questionsData, error: questionsError } = await supabase
-          .from("questions")
-          .select("*")
-          .eq("assessment_id", assessmentId)
-          .order("order_index");
-          
-        if (questionsError) {
-          throw new Error(questionsError.message || "Erro ao carregar questões");
-        }
+        // Buscar questões com retry
+        const fetchQuestions = async (retryCount = 0) => {
+          try {
+            const { data: questionsData, error: questionsError } = await supabase
+              .from("questions")
+              .select("*")
+              .eq("assessment_id", assessmentId)
+              .order("order_index");
+              
+            if (questionsError) {
+              throw new Error(questionsError.message || "Erro ao carregar questões");
+            }
+            
+            return questionsData;
+          } catch (error) {
+            if (retryCount < 3) {
+              console.log(`Tentativa ${retryCount + 1} de carregar questões falhou, tentando novamente...`);
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              return fetchQuestions(retryCount + 1);
+            } else {
+              throw error;
+            }
+          }
+        };
+        
+        // Buscar questões com retries
+        const questionsData = await fetchQuestions();
 
         // Converter dados para o formato esperado pelo componente
         const formattedQuestions: AssessmentQuestion[] = questionsData.map(mapQuestionType);
@@ -111,12 +148,18 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         }
       } catch (error: any) {
         console.error("Erro ao carregar avaliação:", error);
+        setLoadError(error.message || "Erro ao carregar avaliação");
         toast({
           title: "Erro",
           description: error.message || "Não foi possível carregar a avaliação.",
           variant: "destructive"
         });
-        navigate("/dashboard");
+        
+        // Delay antes de navegar de volta
+        setTimeout(() => {
+          localStorage.removeItem("assessmentInProgress");
+          navigate("/dashboard");
+        }, 1500);
       } finally {
         setLoading(false);
       }
@@ -125,7 +168,7 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
     loadAssessment();
   }, [assessmentId, navigate, toast, existingSessionId]);
 
-  return { assessment, loading, sessionId };
+  return { assessment, loading, sessionId, loadError };
 }
 
 const mapQuestionType = (questao: any): AssessmentQuestion => {
