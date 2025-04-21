@@ -81,9 +81,9 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="flex items-center justify-center">
-                <div className="relative w-full aspect-square md:aspect-[4/3] overflow-hidden rounded-lg border secure-element">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#0A84FF] to-[#00D1C5] flex items-center justify-center">
-                    <Shield className="w-32 h-32 text-white" />
+                <div className="relative w-full max-w-[500px] aspect-square md:aspect-[4/3] overflow-hidden rounded-lg border shadow-lg">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyber-blue to-cyber-teal flex items-center justify-center">
+                    <Shield className="w-48 h-48 text-white opacity-90 transition-transform duration-300 hover:scale-105" />
                   </div>
                 </div>
               </div>
