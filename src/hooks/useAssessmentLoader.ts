@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -73,18 +72,28 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         // Buscar dados da avaliação com timeout
         const assessmentData = await fetchWithTimeout();
         
-        // Log dos dados recebidos para debug da duração
-        console.log("Dados da avaliação carregados:", {
-          title: assessmentData.title,
-          duration_minutes: assessmentData.duration_minutes
-        });
+        // Log detalhado dos dados recebidos para debug da duração
+        console.log("Dados da avaliação carregados:", assessmentData);
+        console.log("Duração recebida do banco:", assessmentData.duration_minutes, "tipo:", typeof assessmentData.duration_minutes);
         
-        // Garantir que a duração seja um número positivo e use o valor do banco
-        const duration = assessmentData.duration_minutes && !isNaN(assessmentData.duration_minutes) 
-          ? Math.max(1, parseInt(assessmentData.duration_minutes)) 
-          : 60; // 60 minutos como fallback somente se o valor for inválido ou nulo
+        // Garantir que a duração seja um número e use o valor exato do banco
+        let duration: number;
+        if (assessmentData.duration_minutes !== null && assessmentData.duration_minutes !== undefined) {
+          // Converter explicitamente para número
+          duration = Number(assessmentData.duration_minutes);
+          // Garantir que seja pelo menos 1 minuto se for um número válido
+          if (!isNaN(duration)) {
+            duration = Math.max(1, duration);
+          } else {
+            console.error("Valor de duração inválido:", assessmentData.duration_minutes);
+            duration = 1; // Fallback para 1 minuto se for NaN
+          }
+        } else {
+          console.error("Duração não definida no banco de dados");
+          duration = 1; // Fallback para 1 minuto
+        }
           
-        console.log("Duração carregada:", duration, "minutos");
+        console.log("Duração configurada para uso:", duration, "minutos");
 
         // Buscar questões com retry
         const fetchQuestions = async (retryCount = 0) => {
