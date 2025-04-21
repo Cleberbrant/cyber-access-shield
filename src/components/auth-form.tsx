@@ -123,6 +123,22 @@ export function AuthForm({ type, className }: AuthFormProps) {
       // Adiciona logs para depuração
       console.log("Iniciando registro com:", { email, password });
       
+      // Primeiro, verificar se o usuário já existe
+      const { data: existingUser, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', email)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.log("Erro ao verificar usuário existente:", checkError);
+      }
+      
+      if (existingUser) {
+        throw new Error("Este email já está em uso. Por favor, tente outro email.");
+      }
+      
+      // Tenta registrar o usuário
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -131,8 +147,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
             full_name: email.split('@')[0], // Nome padrão baseado no email
             avatar_url: "",
             is_admin: false // Por padrão, novos usuários não são administradores
-          },
-          // Remove o emailRedirectTo para evitar redirecionamentos desnecessários
+          }
         }
       });
 
@@ -186,7 +201,12 @@ export function AuthForm({ type, className }: AuthFormProps) {
     console.log("Formulário enviado:", { type, email, password, confirmPassword });
     
     // Validar o formulário
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log("Validação falhou, erros:", errors);
+      return;
+    }
+    
+    console.log("Validação bem-sucedida, prosseguindo com o envio");
     
     if (type === "login") {
       await handleLogin();
