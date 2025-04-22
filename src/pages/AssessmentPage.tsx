@@ -37,24 +37,26 @@ export default function AssessmentPage() {
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } = 
     useAssessmentAnswers(sessionId);
     
+  // IMPORTANTE: Definir handleSubmitAssessment antes de usá-lo em outros hooks
+  const { isSubmitting, handleSubmitAssessment } = 
+    useAssessmentSubmission(assessmentId || '', sessionId);
+    
   // Usar a duração exata da avaliação como configurada no banco de dados
   const duration = assessment?.duration;
   
   console.log("Duração da avaliação recuperada:", duration);
   console.log("Tipo da duração:", typeof duration);
   
+  // Usar handleSubmitAssessment depois que ele foi definido
   const { formatTimeLeft } = useAssessmentTimer(
     duration,
     () => {
-      if (assessment) {
+      if (assessment && handleSubmitAssessment) {
         console.log("Tempo esgotado. Duração da avaliação:", duration);
         handleSubmitAssessment(answers, assessment.questions);
       }
     }
   );
-  
-  const { isSubmitting, handleSubmitAssessment } = 
-    useAssessmentSubmission(assessmentId || '', sessionId);
 
   // Função para tentar novamente caso ocorra um erro
   const handleRetry = () => {
