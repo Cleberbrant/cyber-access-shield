@@ -36,27 +36,25 @@ export default function AssessmentPage() {
   // Hooks personalizados para gerenciar o estado e comportamento
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } = 
     useAssessmentAnswers(sessionId);
-  const { isSubmitting, handleSubmitAssessment } = 
-    useAssessmentSubmission(assessmentId || '', sessionId);
     
   // Usar a duração exata da avaliação como configurada no banco de dados
-  // Garantir que a duração seja um número válido (mínimo 1 minuto)
-  const assessmentDuration = typeof assessment?.duration === 'number' && !isNaN(assessment?.duration) && assessment?.duration > 0
-    ? assessment.duration 
-    : 1;  // Fallback para 1 minuto se a duração for inválida
+  const duration = assessment?.duration;
   
-  console.log("Duração da avaliação recuperada:", assessment?.duration);
-  console.log("Duração da avaliação usada no timer:", assessmentDuration, "minutos");
-    
+  console.log("Duração da avaliação recuperada:", duration);
+  console.log("Tipo da duração:", typeof duration);
+  
   const { formatTimeLeft } = useAssessmentTimer(
-    assessmentDuration,
+    duration,
     () => {
       if (assessment) {
-        console.log("Tempo esgotado. Duração da avaliação:", assessmentDuration);
+        console.log("Tempo esgotado. Duração da avaliação:", duration);
         handleSubmitAssessment(answers, assessment.questions);
       }
     }
   );
+  
+  const { isSubmitting, handleSubmitAssessment } = 
+    useAssessmentSubmission(assessmentId || '', sessionId);
 
   // Função para tentar novamente caso ocorra um erro
   const handleRetry = () => {
