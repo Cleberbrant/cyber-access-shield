@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -29,7 +28,6 @@ interface AssessmentResult {
   }[];
 }
 
-// Função auxiliar para extrair uma propriedade de um objeto Json
 const getJsonProperty = <T,>(obj: Json | null | undefined, key: string): T | undefined => {
   if (typeof obj === 'object' && obj !== null && key in obj) {
     return obj[key] as unknown as T;
@@ -53,7 +51,6 @@ export default function AssessmentResultPage() {
           throw new Error("ID da avaliação não encontrado");
         }
 
-        // Buscar dados da sessão da avaliação com relações JOIN completas
         const { data: sessionData, error: sessionError } = await supabase
           .from("assessment_sessions")
           .select(`
@@ -83,7 +80,6 @@ export default function AssessmentResultPage() {
 
         console.log("Dados da sessão básica:", sessionData);
 
-        // Buscar respostas do usuário em uma consulta separada com JOIN completo
         const { data: userAnswersData, error: userAnswersError } = await supabase
           .from("user_answers")
           .select(`
@@ -106,16 +102,14 @@ export default function AssessmentResultPage() {
 
         console.log("Dados das respostas:", userAnswersData);
 
-        // Verificar se as respostas têm dados de perguntas válidos
         if (!userAnswersData || userAnswersData.length === 0) {
           toast({
             title: "Aviso",
             description: "Nenhuma resposta foi encontrada para esta avaliação.",
-            variant: "warning"
+            variant: "default"
           });
         }
 
-        // Processar apenas respostas com dados de perguntas válidos
         const questionsResults = userAnswersData
           .filter(answer => answer.question !== null)
           .map((answer) => {
@@ -124,7 +118,6 @@ export default function AssessmentResultPage() {
               return null;
             }
 
-            // Log para depuração
             console.log(`
               Questão ID: ${answer.question.id}
               Texto: ${answer.question.question_text}
@@ -133,7 +126,6 @@ export default function AssessmentResultPage() {
               Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
             `);
             
-            // Extrair a explicação do objeto options usando a função auxiliar
             const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
             
             return {
@@ -145,7 +137,7 @@ export default function AssessmentResultPage() {
               explanation: explanation
             };
           })
-          .filter(Boolean); // Remover possíveis valores null
+          .filter(Boolean);
 
         const totalQuestions = questionsResults.length;
         const correctAnswers = questionsResults.filter(q => q?.correct).length;
@@ -161,7 +153,7 @@ export default function AssessmentResultPage() {
           maxScore: totalQuestions,
           percentageScore,
           completedAt: sessionData.completed_at,
-          questionsResults: questionsResults as any[] // O filtro Boolean acima garante que não há nulls
+          questionsResults: questionsResults as any[]
         };
 
         setResult(formattedResult);
