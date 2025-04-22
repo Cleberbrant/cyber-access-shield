@@ -1,13 +1,15 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle, XCircle, FileText, Home } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, FileText, Home, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { ResultQuestionRenderer } from "@/components/assessment/ResultQuestionRenderer";
+import { useToast } from "@/hooks/use-toast";
 
 interface AssessmentResult {
   id: string;
@@ -40,6 +42,7 @@ export default function AssessmentResultPage() {
   const { assessmentId } = useParams();
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchResult = async () => {
@@ -50,7 +53,7 @@ export default function AssessmentResultPage() {
           throw new Error("ID da avaliação não encontrado");
         }
 
-        // Buscar dados da sessão da avaliação
+        // Buscar dados da sessão da avaliação com relações JOIN completas
         const { data: sessionData, error: sessionError } = await supabase
           .from("assessment_sessions")
           .select(`
@@ -62,24 +65,13 @@ export default function AssessmentResultPage() {
               id,
               title,
               description
-            ),
-            user_answers(
-              id,
-              answer,
-              is_correct,
-              question:questions(
-                id,
-                question_text,
-                correct_answer,
-                options
-              )
             )
           `)
           .eq("assessment_id", assessmentId)
           .is("is_completed", true)
           .order("completed_at", { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (sessionError) {
           throw new Error("Erro ao carregar resultados da avaliação");
@@ -89,44 +81,77 @@ export default function AssessmentResultPage() {
           throw new Error("Nenhum resultado encontrado");
         }
 
-        console.log("Dados da sessão:", JSON.stringify(sessionData, null, 2));
+        console.log("Dados da sessão básica:", sessionData);
 
-        // Calcular pontuação e resultados
-        const questionsResults = sessionData.user_answers.map((answer) => {
-          // Log para depuração - verificar os valores das respostas
-          console.log(`
-            Questão ID: ${answer.question.id}
-            Texto: ${answer.question.question_text}
-            Resposta do usuário: "${answer.answer}"
-            Resposta correta: "${answer.question.correct_answer}"
-            Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
-          `);
-          
-          // Extrair a explicação do objeto options usando a função auxiliar
-          const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
-          
-          // Verificar se a resposta está correta comparando diretamente
-          // Isso é para diagnóstico, vamos usar o valor do banco de dados para exibição
-          const matchesCorrectAnswer = 
-            answer.answer && 
-            answer.question.correct_answer && 
-            answer.answer.trim().toLowerCase() === answer.question.correct_answer.trim().toLowerCase();
-          
-          console.log(`Comparação direta de strings: ${matchesCorrectAnswer ? 'Igual' : 'Diferente'}`);
-          
-          return {
-            id: answer.question.id,
-            text: answer.question.question_text,
-            correct: answer.is_correct || false, // Usando o valor do banco de dados
-            userAnswer: answer.answer || "Sem resposta",
-            correctAnswer: answer.question.correct_answer || "",
-            explanation: explanation
-          };
-        });
+        // Buscar respostas do usuário em uma consulta separada com JOIN completo
+        const { data: userAnswersData, error: userAnswersError } = await supabase
+          .from("user_answers")
+          .select(`
+            id,
+            answer,
+            is_correct,
+            question:questions(
+              id, 
+              question_text, 
+              correct_answer,
+              options
+            )
+          `)
+          .eq("session_id", sessionData.id);
+
+        if (userAnswersError) {
+          console.error("Erro ao carregar respostas:", userAnswersError);
+          throw new Error("Erro ao carregar respostas do usuário");
+        }
+
+        console.log("Dados das respostas:", userAnswersData);
+
+        // Verificar se as respostas têm dados de perguntas válidos
+        if (!userAnswersData || userAnswersData.length === 0) {
+          toast({
+            title: "Aviso",
+            description: "Nenhuma resposta foi encontrada para esta avaliação.",
+            variant: "warning"
+          });
+        }
+
+        // Processar apenas respostas com dados de perguntas válidos
+        const questionsResults = userAnswersData
+          .filter(answer => answer.question !== null)
+          .map((answer) => {
+            if (!answer.question) {
+              console.warn("Resposta sem dados da questão:", answer);
+              return null;
+            }
+
+            // Log para depuração
+            console.log(`
+              Questão ID: ${answer.question.id}
+              Texto: ${answer.question.question_text}
+              Resposta do usuário: "${answer.answer}"
+              Resposta correta: "${answer.question.correct_answer}"
+              Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
+            `);
+            
+            // Extrair a explicação do objeto options usando a função auxiliar
+            const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
+            
+            return {
+              id: answer.question.id,
+              text: answer.question.question_text,
+              correct: answer.is_correct || false,
+              userAnswer: answer.answer || "Sem resposta",
+              correctAnswer: answer.question.correct_answer || "",
+              explanation: explanation
+            };
+          })
+          .filter(Boolean); // Remover possíveis valores null
 
         const totalQuestions = questionsResults.length;
-        const correctAnswers = questionsResults.filter(q => q.correct).length;
-        const percentageScore = Math.round((correctAnswers / totalQuestions) * 100);
+        const correctAnswers = questionsResults.filter(q => q?.correct).length;
+        const percentageScore = totalQuestions > 0 
+          ? Math.round((correctAnswers / totalQuestions) * 100) 
+          : 0;
 
         const formattedResult: AssessmentResult = {
           id: sessionData.assessment.id,
@@ -136,19 +161,24 @@ export default function AssessmentResultPage() {
           maxScore: totalQuestions,
           percentageScore,
           completedAt: sessionData.completed_at,
-          questionsResults
+          questionsResults: questionsResults as any[] // O filtro Boolean acima garante que não há nulls
         };
 
         setResult(formattedResult);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erro ao carregar resultado:", error);
+        toast({
+          title: "Erro ao carregar resultados",
+          description: error.message || "Ocorreu um erro ao carregar os resultados da avaliação",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     };
     
     fetchResult();
-  }, [assessmentId]);
+  }, [assessmentId, toast]);
   
   if (loading) {
     return (
@@ -156,7 +186,7 @@ export default function AssessmentResultPage() {
         <div className="container py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <div className="h-8 w-8 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
               <p>Carregando resultados...</p>
             </div>
           </div>
@@ -165,7 +195,7 @@ export default function AssessmentResultPage() {
     );
   }
   
-  if (!result) {
+  if (!result || result.questionsResults.length === 0) {
     return (
       <SecureAppShell>
         <div className="container py-8">
@@ -174,7 +204,7 @@ export default function AssessmentResultPage() {
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Resultado não encontrado</h2>
               <p className="text-muted-foreground mb-4">
-                Não foi possível encontrar o resultado da avaliação solicitada.
+                Não foi possível encontrar o resultado da avaliação solicitada ou os dados das questões estão incompletos.
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard
