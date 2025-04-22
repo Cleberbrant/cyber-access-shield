@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -39,13 +38,11 @@ export default function AssessmentPage() {
   const { isSubmitting, handleSubmitAssessment } = 
     useAssessmentSubmission(assessmentId || '', sessionId);
     
-  // Garantir que a duração da avaliação seja explicitamente convertida para número
-  // e seja tratada corretamente
-  const assessmentDuration = assessment?.duration && !isNaN(Number(assessment.duration)) 
-    ? Number(assessment.duration) 
-    : 1; // 1 minuto como fallback se a duração for inválida
-    
-  // Log para debug da duração
+  // Usar a duração exata da avaliação como configurada no banco de dados
+  // Garantir apenas que não seja null/undefined (usar null coalescing)
+  const assessmentDuration = assessment?.duration ?? 0;
+  
+  console.log("Duração da avaliação recuperada:", assessment?.duration);
   console.log("Duração da avaliação usada no timer:", assessmentDuration, "minutos");
     
   const { formatTimeLeft } = useAssessmentTimer(

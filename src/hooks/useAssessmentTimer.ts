@@ -2,14 +2,16 @@
 import { useState, useEffect, useCallback } from "react";
 
 export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () => void) {
-  // Garantir que initialTimeInMinutes não seja zero ou negativo
-  // Converter explicitamente para número para garantir que não seja string
-  const validTime = Math.max(Number(initialTimeInMinutes) || 1, 1);
+  // Garantir que initialTimeInMinutes seja um número válido
+  // Se for zero, undefined ou NaN, será tratado como 0
+  const validTime = typeof initialTimeInMinutes === 'number' && !isNaN(initialTimeInMinutes) && initialTimeInMinutes > 0 
+    ? initialTimeInMinutes 
+    : 0;
+  
   const [timeLeft, setTimeLeft] = useState(validTime * 60);
   
-  // Log para debug da duração inicial
-  console.log("Duração inicial recebida:", initialTimeInMinutes, "minutos");
-  console.log("Duração validada para uso:", validTime, "minutos");
+  console.log("Timer recebeu duração:", initialTimeInMinutes, "minutos");
+  console.log("Timer usando duração validada:", validTime, "minutos");
   console.log("Tempo total em segundos:", validTime * 60);
 
   useEffect(() => {
