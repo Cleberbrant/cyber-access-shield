@@ -3,10 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 
 export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () => void) {
   // Garantir que initialTimeInMinutes seja um número válido
-  // Se for zero, undefined ou NaN, será tratado como 0
+  // Se for zero, undefined ou NaN, será tratado como 1 minuto (valor mínimo)
   const validTime = typeof initialTimeInMinutes === 'number' && !isNaN(initialTimeInMinutes) && initialTimeInMinutes > 0 
     ? initialTimeInMinutes 
-    : 0;
+    : 1;  // Valor mínimo de 1 minuto como fallback
   
   const [timeLeft, setTimeLeft] = useState(validTime * 60);
   

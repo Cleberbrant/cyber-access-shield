@@ -76,8 +76,11 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         console.log("Dados da avaliação carregados:", assessmentData);
         console.log("Duração recebida do banco:", assessmentData.duration_minutes, "tipo:", typeof assessmentData.duration_minutes);
         
-        // Usar exatamente o valor fornecido pelo banco de dados sem modificações
-        const duration = assessmentData.duration_minutes;
+        // Garantir que a duração seja um número
+        const duration = typeof assessmentData.duration_minutes === 'number' ? 
+          assessmentData.duration_minutes : 
+          parseInt(assessmentData.duration_minutes, 10);
+          
         console.log("Duração configurada para uso:", duration, "minutos");
 
         // Buscar questões com retry

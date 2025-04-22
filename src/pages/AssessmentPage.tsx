@@ -39,8 +39,10 @@ export default function AssessmentPage() {
     useAssessmentSubmission(assessmentId || '', sessionId);
     
   // Usar a duração exata da avaliação como configurada no banco de dados
-  // Garantir apenas que não seja null/undefined (usar null coalescing)
-  const assessmentDuration = assessment?.duration ?? 0;
+  // Garantir que a duração seja um número válido (mínimo 1 minuto)
+  const assessmentDuration = typeof assessment?.duration === 'number' && !isNaN(assessment?.duration) && assessment?.duration > 0
+    ? assessment.duration 
+    : 1;  // Fallback para 1 minuto se a duração for inválida
   
   console.log("Duração da avaliação recuperada:", assessment?.duration);
   console.log("Duração da avaliação usada no timer:", assessmentDuration, "minutos");
