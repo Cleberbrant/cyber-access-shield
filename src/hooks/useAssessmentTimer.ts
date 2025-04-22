@@ -10,10 +10,16 @@ export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () =>
   
   const [timeLeft, setTimeLeft] = useState(validTime * 60);
   const initialTimeRef = useRef(validTime); // Guardar o valor inicial para depuração
+  const onTimeUpRef = useRef(onTimeUp); // Armazenar a referência da função de callback
   
   console.log("Timer recebeu duração:", initialTimeInMinutes, "minutos", "tipo:", typeof initialTimeInMinutes);
   console.log("Timer usando duração validada:", validTime, "minutos");
   console.log("Tempo total em segundos:", validTime * 60);
+
+  // Atualizar a referência do callback quando ele mudar
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  }, [onTimeUp]);
 
   useEffect(() => {
     // Se o valor mudou e é válido, atualizar o timer
@@ -31,7 +37,10 @@ export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () =>
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timer);
-          onTimeUp();
+          // Verificar se o callback existe antes de chamá-lo
+          if (typeof onTimeUpRef.current === 'function') {
+            onTimeUpRef.current();
+          }
           return 0;
         }
         return prev - 1;
@@ -39,7 +48,7 @@ export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () =>
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [timeLeft, onTimeUp]);
+  }, [timeLeft]);
 
   const formatTimeLeft = useCallback(() => {
     const minutes = Math.floor(timeLeft / 60);
