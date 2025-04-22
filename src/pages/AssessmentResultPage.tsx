@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -40,6 +41,7 @@ export default function AssessmentResultPage() {
   const { assessmentId } = useParams();
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -51,19 +53,22 @@ export default function AssessmentResultPage() {
           throw new Error("ID da avaliação não encontrado");
         }
 
+        // Primeiro, buscamos os dados básicos da avaliação
+        const { data: assessmentData, error: assessmentError } = await supabase
+          .from("assessments")
+          .select("id, title, description")
+          .eq("id", assessmentId)
+          .single();
+
+        if (assessmentError || !assessmentData) {
+          console.error("Erro ao buscar avaliação:", assessmentError);
+          throw new Error("Avaliação não encontrada");
+        }
+
+        // Buscamos a sessão mais recente desta avaliação
         const { data: sessionData, error: sessionError } = await supabase
           .from("assessment_sessions")
-          .select(`
-            id,
-            score,
-            completed_at,
-            assessment_id,
-            assessment:assessments(
-              id,
-              title,
-              description
-            )
-          `)
+          .select("id, score, completed_at")
           .eq("assessment_id", assessmentId)
           .is("is_completed", true)
           .order("completed_at", { ascending: false })
@@ -71,28 +76,37 @@ export default function AssessmentResultPage() {
           .maybeSingle();
 
         if (sessionError) {
-          throw new Error("Erro ao carregar resultados da avaliação");
+          console.error("Erro ao buscar sessão:", sessionError);
+          throw new Error("Erro ao carregar resultados da sessão");
         }
 
         if (!sessionData) {
-          throw new Error("Nenhum resultado encontrado");
+          console.warn("Nenhuma sessão completada para esta avaliação");
+          setError("Nenhuma sessão completada encontrada para esta avaliação.");
+          setLoading(false);
+          return;
         }
 
-        console.log("Dados da sessão básica:", sessionData);
+        console.log("Dados da sessão básica:", {
+          ...sessionData,
+          assessment: assessmentData
+        });
 
+        // Buscamos as questões da avaliação
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("questions")
+          .select("id, question_text, correct_answer, options")
+          .eq("assessment_id", assessmentId);
+
+        if (questionsError) {
+          console.error("Erro ao buscar questões:", questionsError);
+          throw new Error("Erro ao carregar questões da avaliação");
+        }
+
+        // Agora buscamos as respostas do usuário para esta sessão
         const { data: userAnswersData, error: userAnswersError } = await supabase
           .from("user_answers")
-          .select(`
-            id,
-            answer,
-            is_correct,
-            question:questions(
-              id, 
-              question_text, 
-              correct_answer,
-              options
-            )
-          `)
+          .select("id, answer, is_correct, question_id")
           .eq("session_id", sessionData.id);
 
         if (userAnswersError) {
@@ -101,6 +115,7 @@ export default function AssessmentResultPage() {
         }
 
         console.log("Dados das respostas:", userAnswersData);
+        console.log("Dados das questões:", questionsData);
 
         if (!userAnswersData || userAnswersData.length === 0) {
           toast({
@@ -110,30 +125,34 @@ export default function AssessmentResultPage() {
           });
         }
 
+        // Combinamos as respostas com as questões correspondentes
         const questionsResults = userAnswersData
-          .filter(answer => answer.question !== null)
           .map((answer) => {
-            if (!answer.question) {
-              console.warn("Resposta sem dados da questão:", answer);
+            // Encontramos a questão correspondente pelo question_id
+            const question = questionsData?.find(q => q.id === answer.question_id);
+            
+            // Se não encontrou a questão, pulamos
+            if (!question) {
+              console.warn(`Questão não encontrada para a resposta ${answer.id} (question_id: ${answer.question_id})`);
               return null;
             }
 
             console.log(`
-              Questão ID: ${answer.question.id}
-              Texto: ${answer.question.question_text}
-              Resposta do usuário: "${answer.answer}"
-              Resposta correta: "${answer.question.correct_answer}"
+              Questão ID: ${question.id}
+              Texto: ${question.question_text}
+              Resposta do usuário: "${answer.answer || "Sem resposta"}"
+              Resposta correta: "${question.correct_answer || "Não definida"}"
               Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
             `);
             
-            const explanation = getJsonProperty<string>(answer.question.options, 'explanation');
+            const explanation = getJsonProperty<string>(question.options, 'explanation');
             
             return {
-              id: answer.question.id,
-              text: answer.question.question_text,
+              id: question.id,
+              text: question.question_text,
               correct: answer.is_correct || false,
               userAnswer: answer.answer || "Sem resposta",
-              correctAnswer: answer.question.correct_answer || "",
+              correctAnswer: question.correct_answer || "",
               explanation: explanation
             };
           })
@@ -146,9 +165,9 @@ export default function AssessmentResultPage() {
           : 0;
 
         const formattedResult: AssessmentResult = {
-          id: sessionData.assessment.id,
-          title: sessionData.assessment.title,
-          description: sessionData.assessment.description,
+          id: assessmentData.id,
+          title: assessmentData.title,
+          description: assessmentData.description,
           score: correctAnswers,
           maxScore: totalQuestions,
           percentageScore,
@@ -159,6 +178,7 @@ export default function AssessmentResultPage() {
         setResult(formattedResult);
       } catch (error: any) {
         console.error("Erro ao carregar resultado:", error);
+        setError(error.message || "Ocorreu um erro ao carregar os resultados da avaliação");
         toast({
           title: "Erro ao carregar resultados",
           description: error.message || "Ocorreu um erro ao carregar os resultados da avaliação",
@@ -187,7 +207,7 @@ export default function AssessmentResultPage() {
     );
   }
   
-  if (!result || result.questionsResults.length === 0) {
+  if (error || !result || result.questionsResults.length === 0) {
     return (
       <SecureAppShell>
         <div className="container py-8">
@@ -196,7 +216,7 @@ export default function AssessmentResultPage() {
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Resultado não encontrado</h2>
               <p className="text-muted-foreground mb-4">
-                Não foi possível encontrar o resultado da avaliação solicitada ou os dados das questões estão incompletos.
+                {error || "Não foi possível encontrar o resultado da avaliação solicitada ou os dados das questões estão incompletos."}
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard

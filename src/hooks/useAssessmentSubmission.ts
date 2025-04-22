@@ -68,7 +68,8 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
           isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
         }
         
-        await supabase
+        // Garantir que question_id seja salvo corretamente
+        const { error: answerError } = await supabase
           .from("user_answers")
           .upsert({
             session_id: sessionId,
@@ -78,6 +79,10 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
           }, {
             onConflict: 'session_id,question_id'
           });
+          
+        if (answerError) {
+          console.error(`Erro ao salvar resposta para questão ${question.id}:`, answerError);
+        }
       }
       
       // Calcular pontuação
@@ -91,7 +96,7 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
       const score = total > 0 ? (correctCount / total) * 100 : 0;
       
       // Marcar sessão como concluída
-      await supabase
+      const { error: updateError } = await supabase
         .from("assessment_sessions")
         .update({
           is_completed: true,
@@ -99,6 +104,11 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
           score: score
         })
         .eq("id", sessionId);
+        
+      if (updateError) {
+        console.error("Erro ao atualizar sessão:", updateError);
+        throw new Error("Erro ao finalizar avaliação.");
+      }
       
       // Desativar proteções
       disableAssessmentProtection();
