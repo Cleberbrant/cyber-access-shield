@@ -76,23 +76,8 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         console.log("Dados da avaliação carregados:", assessmentData);
         console.log("Duração recebida do banco:", assessmentData.duration_minutes, "tipo:", typeof assessmentData.duration_minutes);
         
-        // Garantir que a duração seja um número e use o valor exato do banco
-        let duration: number;
-        if (assessmentData.duration_minutes !== null && assessmentData.duration_minutes !== undefined) {
-          // Converter explicitamente para número
-          duration = Number(assessmentData.duration_minutes);
-          // Garantir que seja pelo menos 1 minuto se for um número válido
-          if (!isNaN(duration)) {
-            duration = Math.max(1, duration);
-          } else {
-            console.error("Valor de duração inválido:", assessmentData.duration_minutes);
-            duration = 1; // Fallback para 1 minuto se for NaN
-          }
-        } else {
-          console.error("Duração não definida no banco de dados");
-          duration = 1; // Fallback para 1 minuto
-        }
-          
+        // Usar exatamente o valor fornecido pelo banco de dados sem modificações
+        const duration = assessmentData.duration_minutes;
         console.log("Duração configurada para uso:", duration, "minutos");
 
         // Buscar questões com retry
