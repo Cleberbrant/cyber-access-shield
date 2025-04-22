@@ -39,10 +39,14 @@ export default function AssessmentPage() {
   const { isSubmitting, handleSubmitAssessment } = 
     useAssessmentSubmission(assessmentId || '', sessionId);
     
-  // Garantindo que a duração da avaliação seja sempre um número positivo
-  const assessmentDuration = assessment?.duration && assessment.duration > 0 
-    ? assessment.duration 
-    : 60; // 60 minutos como fallback se a duração for inválida
+  // Garantir que a duração da avaliação seja explicitamente convertida para número
+  // e seja tratada corretamente
+  const assessmentDuration = assessment?.duration && !isNaN(Number(assessment.duration)) 
+    ? Number(assessment.duration) 
+    : 1; // 1 minuto como fallback se a duração for inválida
+    
+  // Log para debug da duração
+  console.log("Duração da avaliação usada no timer:", assessmentDuration, "minutos");
     
   const { formatTimeLeft } = useAssessmentTimer(
     assessmentDuration,
