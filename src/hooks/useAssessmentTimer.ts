@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () => void) {
   // Garantir que initialTimeInMinutes seja um número válido
@@ -9,10 +9,20 @@ export function useAssessmentTimer(initialTimeInMinutes: number, onTimeUp: () =>
     : 1;  // Valor mínimo de 1 minuto como fallback
   
   const [timeLeft, setTimeLeft] = useState(validTime * 60);
+  const initialTimeRef = useRef(validTime); // Guardar o valor inicial para depuração
   
-  console.log("Timer recebeu duração:", initialTimeInMinutes, "minutos");
+  console.log("Timer recebeu duração:", initialTimeInMinutes, "minutos", "tipo:", typeof initialTimeInMinutes);
   console.log("Timer usando duração validada:", validTime, "minutos");
   console.log("Tempo total em segundos:", validTime * 60);
+
+  useEffect(() => {
+    // Se o valor mudou e é válido, atualizar o timer
+    if (typeof initialTimeInMinutes === 'number' && !isNaN(initialTimeInMinutes) && initialTimeInMinutes > 0) {
+      console.log("Atualizando tempo restante para:", initialTimeInMinutes * 60, "segundos");
+      setTimeLeft(initialTimeInMinutes * 60);
+      initialTimeRef.current = initialTimeInMinutes;
+    }
+  }, [initialTimeInMinutes]);
 
   useEffect(() => {
     if (timeLeft <= 0) return;

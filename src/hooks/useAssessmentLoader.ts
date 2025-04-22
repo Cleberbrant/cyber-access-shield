@@ -78,9 +78,22 @@ export function useAssessmentLoader(assessmentId: string | undefined, existingSe
         console.log("Duração recebida do banco:", assessmentData.duration_minutes, "tipo:", typeof assessmentData.duration_minutes);
         
         // Garantir que a duração seja um número
-        const duration = typeof assessmentData.duration_minutes === 'number' ? 
-          assessmentData.duration_minutes : 
-          parseInt(assessmentData.duration_minutes, 10);
+        let duration: number;
+        
+        if (typeof assessmentData.duration_minutes === 'number') {
+          duration = assessmentData.duration_minutes;
+        } else if (typeof assessmentData.duration_minutes === 'string') {
+          duration = parseInt(assessmentData.duration_minutes, 10);
+        } else {
+          // Valor padrão se nenhum dos casos acima for válido
+          duration = 1;
+        }
+        
+        // Verificar se a conversão resultou em um número válido
+        if (isNaN(duration) || duration <= 0) {
+          console.warn("Duração inválida após conversão, usando valor padrão");
+          duration = 1;
+        }
           
         console.log("Duração configurada para uso:", duration, "minutos");
 
