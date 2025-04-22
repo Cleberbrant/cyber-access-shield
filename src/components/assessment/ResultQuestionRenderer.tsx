@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle, XCircle, HelpCircle } from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,32 +17,33 @@ interface QuestionResultProps {
 }
 
 export function ResultQuestionRenderer({ index, question }: QuestionResultProps) {
-  // Verificar se a questão existe
-  if (!question || !question.id) {
-    console.warn("Questão inválida recebida no ResultQuestionRenderer");
+  // Verificar se a questão existe e tem todas as propriedades necessárias
+  if (!question || !question.id || !question.text) {
+    console.warn("Questão inválida recebida no ResultQuestionRenderer:", question);
     return null;
   }
 
-  // Verificar valores vazios ou indefinidos
+  // Garantir que todos os valores estejam definidos, mesmo que vazios
   const userAnswer = question.userAnswer?.trim() || "Sem resposta";
   const correctAnswer = question.correctAnswer?.trim() || "Não definida";
+  const isCorrect = question.correct === true;
   
   // Log para depuração - verificar se os valores correspondem
   console.log(`Questão ${index + 1}: 
     ID: ${question.id}
+    Texto: ${question.text}
     Resposta do usuário: "${userAnswer}"
     Resposta correta: "${correctAnswer}"
-    Marcada como correta no banco: ${question.correct ? 'Sim' : 'Não'}
-    Comparação direta: ${userAnswer.toLowerCase() === correctAnswer.toLowerCase() ? 'Igual' : 'Diferente'}
+    Marcada como correta: ${isCorrect ? 'Sim' : 'Não'}
   `);
 
   return (
     <Card key={question.id} className="overflow-hidden">
-      <div className={`h-1 ${question.correct ? 'bg-green-500' : 'bg-red-500'}`} />
+      <div className={`h-1 ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`} />
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-base font-medium">Questão {index + 1}</CardTitle>
-          {question.correct ? (
+          {isCorrect ? (
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30">
               <CheckCircle className="h-3.5 w-3.5 mr-1" />
               Correta
@@ -61,12 +62,12 @@ export function ResultQuestionRenderer({ index, question }: QuestionResultProps)
         <div className="space-y-2 text-sm">
           <div className="p-2 bg-muted/40 rounded-md">
             <span className="font-medium">Sua resposta: </span>
-            <span className={question.correct ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
+            <span className={isCorrect ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
               {userAnswer}
             </span>
           </div>
           
-          {!question.correct && (
+          {!isCorrect && (
             <div className="p-2 bg-muted/40 rounded-md">
               <span className="font-medium">Resposta correta: </span>
               <span className="text-green-600 dark:text-green-400">{correctAnswer}</span>
