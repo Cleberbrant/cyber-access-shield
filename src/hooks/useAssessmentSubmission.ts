@@ -48,30 +48,55 @@ export function useAssessmentSubmission(assessmentId: string, sessionId: string 
         }
       }
       
-      // Verificar e salvar respostas pendentes
+      // Verificar e salvar respostas pendentes e calcular se estão corretas
       for (const question of questions) {
-        if (answers[question.id]) {
-          const answer = answers[question.id];
-          const stringAnswer = typeof answer === 'object' ? JSON.stringify(answer) : String(answer);
-          
-          await supabase
-            .from("user_answers")
-            .upsert({
-              session_id: sessionId,
-              question_id: question.id,
-              answer: stringAnswer
-            }, {
-              onConflict: 'session_id,question_id'
-            });
+        if (!question || !question.id) {
+          console.warn("Questão inválida encontrada:", question);
+          continue; // Pular questões inválidas
         }
+        
+        const userAnswer = answers[question.id] || "";
+        const answerStr = typeof userAnswer === 'object' ? JSON.stringify(userAnswer) : String(userAnswer);
+        
+        // Verificar se a resposta está correta comparando com correct_answer
+        let isCorrect = false;
+        
+        if (question.correct_answer) {
+          // Comparar respostas (ignorando case e espaços extras)
+          const normalizedUserAnswer = answerStr.trim().toLowerCase();
+          const normalizedCorrectAnswer = question.correct_answer.trim().toLowerCase();
+          isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
+        }
+        
+        await supabase
+          .from("user_answers")
+          .upsert({
+            session_id: sessionId,
+            question_id: question.id,
+            answer: answerStr,
+            is_correct: isCorrect
+          }, {
+            onConflict: 'session_id,question_id'
+          });
       }
+      
+      // Calcular pontuação
+      const { data: userAnswers } = await supabase
+        .from("user_answers")
+        .select("is_correct")
+        .eq("session_id", sessionId);
+      
+      const correctCount = userAnswers?.filter(a => a.is_correct)?.length || 0;
+      const total = userAnswers?.length || 0;
+      const score = total > 0 ? (correctCount / total) * 100 : 0;
       
       // Marcar sessão como concluída
       await supabase
         .from("assessment_sessions")
         .update({
           is_completed: true,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          score: score
         })
         .eq("id", sessionId);
       

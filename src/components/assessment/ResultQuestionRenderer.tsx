@@ -17,6 +17,12 @@ interface QuestionResultProps {
 }
 
 export function ResultQuestionRenderer({ index, question }: QuestionResultProps) {
+  // Verificar se a questão existe
+  if (!question || !question.id) {
+    console.warn("Questão inválida recebida no ResultQuestionRenderer");
+    return null;
+  }
+
   // Verificar valores vazios ou indefinidos
   const userAnswer = question.userAnswer?.trim() || "Sem resposta";
   const correctAnswer = question.correctAnswer?.trim() || "Não definida";
