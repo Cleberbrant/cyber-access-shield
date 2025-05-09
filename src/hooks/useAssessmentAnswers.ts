@@ -130,3 +130,18 @@ export function useAssessmentAnswers(sessionId: string | null) {
     handleMatchPairChange
   };
 }
+
+export async function validateAnswers(answers: Record<string, any>, correctAnswers: Record<string, any>): Promise<Record<string, boolean>> {
+  const validationResults: Record<string, boolean> = {};
+
+  for (const questionId in answers) {
+    if (correctAnswers.hasOwnProperty(questionId)) {
+      validationResults[questionId] = answers[questionId] === correctAnswers[questionId];
+    } else {
+      console.warn(`Resposta correta não encontrada para a questão ${questionId}`);
+      validationResults[questionId] = false;
+    }
+  }
+
+  return validationResults;
+}
