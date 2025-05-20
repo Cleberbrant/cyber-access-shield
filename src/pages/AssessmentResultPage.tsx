@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
@@ -106,76 +105,42 @@ export default function AssessmentResultPage() {
         // Agora buscamos as respostas do usuário para esta sessão
         const { data: userAnswersData, error: userAnswersError } = await supabase
           .from("user_answers")
-          .select("id, answer, is_correct, question_id")
+          .select("question_id, answer")
           .eq("session_id", sessionData.id);
 
         if (userAnswersError) {
-          console.error("Erro ao carregar respostas:", userAnswersError);
+          console.error("Erro ao buscar respostas do usuário:", userAnswersError);
           throw new Error("Erro ao carregar respostas do usuário");
         }
 
-        console.log("Dados das respostas:", userAnswersData);
-        console.log("Dados das questões:", questionsData);
+        const userAnswers = userAnswersData.reduce((acc: Record<string, any>, item: any) => {
+          acc[item.question_id] = item.answer;
+          return acc;
+        }, {});
 
-        if (!userAnswersData || userAnswersData.length === 0) {
-          toast({
-            title: "Aviso",
-            description: "Nenhuma resposta foi encontrada para esta avaliação.",
-            variant: "default"
-          });
-        }
+        const questionsResults = questionsData.map((question: any) => {
+          const userAnswer = userAnswers[question.id] || "";
+          const correct = userAnswer === question.correct_answer;
+          return {
+            id: question.id,
+            text: question.question_text,
+            correct,
+            userAnswer,
+            correctAnswer: question.correct_answer,
+            explanation: question.options?.explanation || ""
+          };
+        });
 
-        // Combinamos as respostas com as questões correspondentes
-        const questionsResults = userAnswersData
-          .map((answer) => {
-            // Encontramos a questão correspondente pelo question_id
-            const question = questionsData?.find(q => q.id === answer.question_id);
-            
-            // Se não encontrou a questão, pulamos
-            if (!question) {
-              console.warn(`Questão não encontrada para a resposta ${answer.id} (question_id: ${answer.question_id})`);
-              return null;
-            }
-
-            console.log(`
-              Questão ID: ${question.id}
-              Texto: ${question.question_text}
-              Resposta do usuário: "${answer.answer || "Sem resposta"}"
-              Resposta correta: "${question.correct_answer || "Não definida"}"
-              Está correta no BD?: ${answer.is_correct ? 'Sim' : 'Não'}
-            `);
-            
-            const explanation = getJsonProperty<string>(question.options, 'explanation');
-            
-            return {
-              id: question.id,
-              text: question.question_text,
-              correct: answer.is_correct || false,
-              userAnswer: answer.answer || "Sem resposta",
-              correctAnswer: question.correct_answer || "",
-              explanation: explanation
-            };
-          })
-          .filter(Boolean);
-
-        const totalQuestions = questionsResults.length;
-        const correctAnswers = questionsResults.filter(q => q?.correct).length;
-        const percentageScore = totalQuestions > 0 
-          ? Math.round((correctAnswers / totalQuestions) * 100) 
-          : 0;
-
-        const formattedResult: AssessmentResult = {
+        setResult({
           id: assessmentData.id,
           title: assessmentData.title,
           description: assessmentData.description,
-          score: correctAnswers,
-          maxScore: totalQuestions,
-          percentageScore,
+          score: sessionData.score,
+          maxScore: questionsResults.length,
+          percentageScore: (sessionData.score / questionsResults.length) * 100,
           completedAt: sessionData.completed_at,
-          questionsResults: questionsResults as any[]
-        };
-
-        setResult(formattedResult);
+          questionsResults
+        });
       } catch (error: any) {
         console.error("Erro ao carregar resultado:", error);
         setError(error.message || "Ocorreu um erro ao carregar os resultados da avaliação");
