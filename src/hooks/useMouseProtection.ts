@@ -1,28 +1,31 @@
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export function useMouseProtection(isActive: boolean) {
   const { toast } = useToast();
+  const isPopupVisible = useRef(false);
 
   useEffect(() => {
-    // Removendo o evento de mouse leave para evitar o popup
-    
     const handleContextMenu = (e: MouseEvent) => {
-      if (isActive) {
+      if (isActive && !isPopupVisible.current) {
         e.preventDefault();
+        isPopupVisible.current = true;
         toast({
           title: "Ação Bloqueada",
           description: "Menu de contexto está desativado durante a avaliação.",
-          variant: "destructive"
+          variant: "destructive",
         });
+
+        setTimeout(() => {
+          isPopupVisible.current = false;
+        }, 3000); // Tempo para evitar múltiplos popups
+
         return false;
       }
     };
-    
-    // Mantemos apenas o bloqueio do menu de contexto, mas removemos o evento mouseleave
+
     document.addEventListener("contextmenu", handleContextMenu);
-    
+
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
     };

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -206,7 +205,11 @@ const mapQuestionType = (questao: any): AssessmentQuestion => {
     
     case 'code':
       const codigo = getJsonProperty<string>(questao.options, 'code');
-      return codigo ? { ...tipoBase, code: codigo } : tipoBase;
+      if (!codigo) {
+        console.warn(`Questão de código com ID ${questao.id} não possui o campo 'code'.`);
+        return { ...tipoBase, code: "// Código não disponível." };
+      }
+      return { ...tipoBase, code: codigo };
     
     case 'matching':
       const correspondencias = getJsonProperty<Array<{left: string, right: string}>>(questao.options, 'matches');
