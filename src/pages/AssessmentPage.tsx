@@ -1,12 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { enableAssessmentProtection, disableAssessmentProtection } from "@/utils/secure-utils";
 
 // Importar componentes
 import { AssessmentHeader } from "@/components/assessment/AssessmentHeader";
@@ -26,59 +30,66 @@ export default function AssessmentPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
   const [retryCount, setRetryCount] = useState(0);
-  
+
   // Obter o sessionId da URL
-  const sessionIdParam = searchParams.get('session');
-  
+  const sessionIdParam = searchParams.get("session");
+
   // Carregar dados da avaliação
-  const { assessment, loading, sessionId, loadError } = useAssessmentLoader(assessmentId, sessionIdParam);
-  
+  const { assessment, loading, sessionId, loadError } = useAssessmentLoader(
+    assessmentId,
+    sessionIdParam
+  );
+
   // Hooks personalizados para gerenciar o estado e comportamento
-  const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } = 
+  const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } =
     useAssessmentAnswers(sessionId);
-    
+
   // IMPORTANTE: Definir handleSubmitAssessment antes de usá-lo em outros hooks
-  const { isSubmitting, handleSubmitAssessment } = 
-    useAssessmentSubmission(assessmentId || '', sessionId);
-    
+  const { isSubmitting, handleSubmitAssessment } = useAssessmentSubmission(
+    assessmentId || "",
+    sessionId
+  );
+
   // Usar a duração exata da avaliação como configurada no banco de dados
   const duration = assessment?.duration;
-  
-  console.log("Duração da avaliação recuperada:", duration);
-  console.log("Tipo da duração:", typeof duration);
-  
+
   // Usar handleSubmitAssessment depois que ele foi definido
-  const { formatTimeLeft } = useAssessmentTimer(
-    duration,
-    () => {
-      if (assessment && handleSubmitAssessment) {
-        console.log("Tempo esgotado. Duração da avaliação:", duration);
-        handleSubmitAssessment(answers, assessment.questions);
-      }
+  const { formatTimeLeft } = useAssessmentTimer(duration, () => {
+    if (assessment && handleSubmitAssessment) {
+      console.log(
+        "⏰ Tempo esgotado! Finalizando avaliação automaticamente..."
+      );
+      handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = true
     }
-  );
+  });
 
   // Função para tentar novamente caso ocorra um erro
   const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-    navigate(`/assessment/${assessmentId}?session=${sessionIdParam}&retry=${Date.now()}`);
+    setRetryCount((prev) => prev + 1);
+    navigate(
+      `/assessment/${assessmentId}?session=${sessionIdParam}&retry=${Date.now()}`
+    );
   };
 
-  // Ativar proteções de segurança quando o componente for montado
+  // Ativar flag de avaliação em andamento quando componente montar
   useEffect(() => {
-    // Ativar proteções de segurança
-    enableAssessmentProtection();
+    // Definir flag apenas quando entrar na página de avaliação
+    localStorage.setItem("assessmentInProgress", "true");
+    console.log("✅ Flag assessmentInProgress ativada no AssessmentPage");
 
     // Notificar o usuário
     toast({
       title: "Modo Avaliação Ativado",
       description: "Proteções de segurança foram ativadas para a avaliação.",
-      duration: 4000
+      duration: 4000,
     });
 
     // Limpar quando o componente for desmontado
     return () => {
-      disableAssessmentProtection();
+      localStorage.removeItem("assessmentInProgress");
+      console.log(
+        "🔴 Flag assessmentInProgress removida ao sair do AssessmentPage"
+      );
     };
   }, [toast]);
 
@@ -90,7 +101,9 @@ export default function AssessmentPage() {
             <div className="text-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
               <p className="text-xl font-medium">Carregando avaliação...</p>
-              <p className="text-muted-foreground mt-2">Aguarde enquanto preparamos sua avaliação</p>
+              <p className="text-muted-foreground mt-2">
+                Aguarde enquanto preparamos sua avaliação
+              </p>
             </div>
           </div>
         </div>
@@ -105,18 +118,22 @@ export default function AssessmentPage() {
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Erro ao carregar avaliação</h2>
+              <h2 className="text-2xl font-bold mb-2">
+                Erro ao carregar avaliação
+              </h2>
               <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                {loadError || "Não foi possível encontrar a avaliação solicitada."}
+                {loadError ||
+                  "Não foi possível encontrar a avaliação solicitada."}
               </p>
               <div className="space-x-4">
-                <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/dashboard")}
+                >
                   Voltar para o Dashboard
                 </Button>
                 {retryCount < 3 && (
-                  <Button onClick={handleRetry}>
-                    Tentar novamente
-                  </Button>
+                  <Button onClick={handleRetry}>Tentar novamente</Button>
                 )}
               </div>
             </div>
@@ -135,7 +152,8 @@ export default function AssessmentPage() {
               <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Sessão não encontrada</h2>
               <p className="text-muted-foreground mb-4">
-                Não foi possível encontrar ou criar uma sessão para esta avaliação.
+                Não foi possível encontrar ou criar uma sessão para esta
+                avaliação.
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard
@@ -157,7 +175,7 @@ export default function AssessmentPage() {
           currentQuestion={currentQuestionIndex}
           totalQuestions={assessment.questions.length}
         />
-        
+
         <Card className="mb-6 secure-content no-select">
           <CardHeader>
             <CardTitle>Questão {currentQuestionIndex + 1}</CardTitle>
@@ -173,16 +191,18 @@ export default function AssessmentPage() {
           <CardFooter className="flex justify-between">
             <Button
               variant="outline"
-              onClick={() => setCurrentQuestionIndex(prev => prev - 1)}
+              onClick={() => setCurrentQuestionIndex((prev) => prev - 1)}
               disabled={currentQuestionIndex === 0}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Anterior
             </Button>
-            
+
             {currentQuestionIndex === assessment.questions.length - 1 ? (
-              <Button 
-                onClick={() => handleSubmitAssessment(answers, assessment.questions)}
+              <Button
+                onClick={() =>
+                  handleSubmitAssessment(answers, assessment.questions, false)
+                }
                 className="cyber-button"
                 disabled={isSubmitting}
               >
@@ -196,9 +216,11 @@ export default function AssessmentPage() {
                 )}
               </Button>
             ) : (
-              <Button 
-                onClick={() => setCurrentQuestionIndex(prev => prev + 1)}
-                disabled={currentQuestionIndex === assessment.questions.length - 1}
+              <Button
+                onClick={() => setCurrentQuestionIndex((prev) => prev + 1)}
+                disabled={
+                  currentQuestionIndex === assessment.questions.length - 1
+                }
               >
                 Próxima
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -206,18 +228,20 @@ export default function AssessmentPage() {
             )}
           </CardFooter>
         </Card>
-        
+
         <QuestionNavigation
           currentQuestion={currentQuestionIndex}
           totalQuestions={assessment.questions.length}
           answers={answers}
-          questionsMap={assessment.questions.map(q => q.id)}
+          questionsMap={assessment.questions.map((q) => q.id)}
           onQuestionChange={setCurrentQuestionIndex}
         />
-        
+
         <div className="flex justify-end">
           <Button
-            onClick={() => handleSubmitAssessment(answers, assessment.questions)}
+            onClick={() =>
+              handleSubmitAssessment(answers, assessment.questions, false)
+            }
             className="cyber-button"
             disabled={isSubmitting}
           >
