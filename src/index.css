@@ -106,31 +106,31 @@
   .cyber-glass {
     @apply backdrop-blur-md bg-white/10 border border-white/20 shadow-lg;
   }
-  
+
   /* Security shield effect for secure elements */
   .secure-element {
     @apply relative;
   }
-  
+
   .secure-element::before {
     content: "";
     @apply absolute -inset-0.5 rounded-lg bg-gradient-to-r from-cyber-blue to-cyber-teal opacity-75 blur z-0;
   }
-  
+
   .secure-element > * {
     @apply relative z-10;
   }
-  
+
   /* Gradient text for headings */
   .cyber-text-gradient {
     @apply bg-gradient-to-r from-cyber-blue via-cyber-purple to-cyber-teal bg-clip-text text-transparent;
   }
-  
+
   /* Special button with cyber effect */
   .cyber-button {
     @apply relative overflow-hidden transition-all duration-300 bg-gradient-to-r from-cyber-blue to-cyber-teal text-white font-medium px-6 py-2 rounded-md hover:shadow-lg hover:shadow-cyber-blue/30 hover:scale-105;
   }
-  
+
   /* Animações personalizadas */
   @keyframes fadeInUp {
     from {
@@ -144,7 +144,8 @@
   }
 
   @keyframes pulse-slow {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
@@ -153,7 +154,8 @@
   }
 
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0px);
     }
     50% {
@@ -184,17 +186,17 @@
   .delay-300 {
     animation-delay: 300ms;
   }
-  
+
   /* Anti-print class - hides content when printing */
   @media print {
     .no-print {
       display: none !important;
     }
-    
+
     .secure-content {
       position: relative;
     }
-    
+
     .secure-content::after {
       content: "Conteúdo protegido - Impressão não autorizada";
       position: absolute;
@@ -212,7 +214,7 @@
       z-index: 9999;
     }
   }
-  
+
   /* No text selection class */
   .no-select {
     user-select: none;
