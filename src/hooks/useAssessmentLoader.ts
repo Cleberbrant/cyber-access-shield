@@ -4,6 +4,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Assessment, AssessmentQuestion } from "@/types/assessment";
+import {
+  loadSessionProgress,
+  isSessionTimeExpired,
+  SessionProgress,
+} from "@/utils/session-progress";
 
 const getJsonProperty = <T>(
   obj: Json | null | undefined,
@@ -22,6 +27,8 @@ export function useAssessmentLoader(
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(existingSessionId);
+  const [sessionProgress, setSessionProgress] =
+    useState<SessionProgress | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -148,6 +155,8 @@ export function useAssessmentLoader(
           description: assessmentData.description || "",
           duration: duration,
           questions: formattedQuestions,
+          maxAttempts: assessmentData.max_attempts || 1,
+          availableFrom: assessmentData.available_from || null,
         };
 
         setAssessment(mappedAssessment);
@@ -157,6 +166,42 @@ export function useAssessmentLoader(
           // Usar a sessão fornecida na URL
           console.log("Usando sessão existente:", existingSessionId);
           setSessionId(existingSessionId);
+
+          // Carregar progresso da sessão
+          const progress = await loadSessionProgress(existingSessionId);
+
+          if (progress) {
+            // Verificar se o tempo esgotou enquanto estava offline
+            if (isSessionTimeExpired(progress.timeElapsedSeconds, duration)) {
+              console.warn("Sessão expirou por tempo esgotado");
+
+              // Marcar sessão como completa com score 0
+              await supabase
+                .from("assessment_sessions")
+                .update({
+                  is_completed: true,
+                  completed_at: new Date().toISOString(),
+                  score: 0,
+                })
+                .eq("id", existingSessionId);
+
+              toast({
+                title: "Tempo esgotado",
+                description: "O tempo da avaliação esgotou.",
+                variant: "destructive",
+              });
+
+              setTimeout(() => {
+                localStorage.removeItem("assessmentInProgress");
+                navigate(`/assessment-result/${assessmentId}`);
+              }, 1500);
+
+              return;
+            }
+
+            setSessionProgress(progress);
+            console.log("Progresso carregado:", progress);
+          }
         } else {
           // Criar sessão da avaliação
           const { data: userSession } = await supabase.auth.getSession();
@@ -203,7 +248,7 @@ export function useAssessmentLoader(
     loadAssessment();
   }, [assessmentId, navigate, toast, existingSessionId]);
 
-  return { assessment, loading, sessionId, loadError };
+  return { assessment, loading, sessionId, sessionProgress, loadError };
 }
 
 const mapQuestionType = (questao: any): AssessmentQuestion => {

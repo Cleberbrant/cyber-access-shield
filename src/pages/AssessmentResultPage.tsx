@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -34,6 +35,8 @@ interface AssessmentResult {
   isCancelled?: boolean;
   cancellationReason?: string;
   warningCount?: number;
+  attemptNumber?: number;
+  maxAttempts?: number;
   questionsResults: {
     id: string;
     text: string;
@@ -73,10 +76,10 @@ export default function AssessmentResultPage() {
           throw new Error("ID da avaliação não encontrado");
         }
 
-        // Primeiro, buscamos os dados básicos da avaliação
+        // Primeiro, buscamos os dados básicos da avaliação (incluindo max_attempts)
         const { data: assessmentData, error: assessmentError } = await supabase
           .from("assessments")
-          .select("id, title, description")
+          .select("id, title, description, max_attempts")
           .eq("id", assessmentId)
           .single();
 
@@ -85,13 +88,40 @@ export default function AssessmentResultPage() {
           throw new Error("Avaliação não encontrada");
         }
 
+        // Buscar o usuário atual
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error("Usuário não autenticado");
+        }
+
+        // Buscar TODAS as sessões completas do usuário para contar tentativas
+        const { data: allSessions, error: allSessionsError } = await supabase
+          .from("assessment_sessions")
+          .select("id, completed_at")
+          .eq("assessment_id", assessmentId)
+          .eq("user_id", user.id)
+          .is("is_completed", true)
+          .order("completed_at", { ascending: true });
+
+        if (allSessionsError) {
+          console.error("Erro ao buscar todas as sessões:", allSessionsError);
+        }
+
+        console.log(
+          "Total de sessões completas encontradas:",
+          allSessions?.length || 0
+        );
+
         // Buscamos a sessão mais recente desta avaliação
         const { data: sessionData, error: sessionError } = await supabase
           .from("assessment_sessions")
           .select(
-            "id, score, completed_at, is_cancelled, cancellation_reason, warning_count"
+            "id, score, completed_at, is_completed, is_cancelled, cancellation_reason, warning_count"
           )
           .eq("assessment_id", assessmentId)
+          .eq("user_id", user.id)
           .is("is_completed", true)
           .order("completed_at", { ascending: false })
           .limit(1)
@@ -104,25 +134,59 @@ export default function AssessmentResultPage() {
 
         if (!sessionData) {
           console.warn("Nenhuma sessão completada para esta avaliação");
+          console.log(
+            "Debug - Verificando todas as sessões sem filtro de is_completed:"
+          );
+
+          // Debug: buscar sessões sem filtro para ver o que existe
+          const { data: debugSessions } = await supabase
+            .from("assessment_sessions")
+            .select("id, is_completed, completed_at, score")
+            .eq("assessment_id", assessmentId)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          console.log("Sessões encontradas (todas):", debugSessions);
+
           setError("Nenhuma sessão completada encontrada para esta avaliação.");
           setLoading(false);
           return;
         }
 
+        // Determinar número da tentativa
+        const attemptNumber = allSessions
+          ? allSessions.findIndex((s) => s.id === sessionData.id) + 1
+          : 1;
+
         console.log("Dados da sessão básica:", {
           ...sessionData,
           assessment: assessmentData,
+          attemptNumber,
+          totalAttempts: allSessions?.length || 0,
         });
 
         // Buscamos as questões da avaliação
+        console.log(`🔍 Buscando questões para assessment_id: ${assessmentId}`);
+
         const { data: questionsData, error: questionsError } = await supabase
           .from("questions")
           .select("id, question_text, correct_answer, options, question_type")
           .eq("assessment_id", assessmentId);
 
         if (questionsError) {
-          console.error("Erro ao buscar questões:", questionsError);
+          console.error("❌ Erro ao buscar questões:", questionsError);
           throw new Error("Erro ao carregar questões da avaliação");
+        }
+
+        console.log(`📝 Questões encontradas: ${questionsData?.length || 0}`);
+
+        if (!questionsData || questionsData.length === 0) {
+          console.error("❌ Nenhuma questão encontrada para a avaliação");
+          setError(
+            "Os dados das questões estão incompletos para esta avaliação."
+          );
+          setLoading(false);
+          return;
         }
 
         // Agora buscamos as respostas do usuário para esta sessão
@@ -139,6 +203,10 @@ export default function AssessmentResultPage() {
           );
           throw new Error("Erro ao carregar respostas do usuário");
         }
+
+        console.log(
+          `💬 Respostas do usuário encontradas: ${userAnswersData?.length || 0}`
+        );
 
         const userAnswers = userAnswersData.reduce(
           (acc: Record<string, any>, item: any) => {
@@ -180,6 +248,13 @@ export default function AssessmentResultPage() {
             ? (correctAnswersCount / questionsResults.length) * 100
             : 0;
 
+        console.log(
+          `📊 Resultado calculado: ${correctAnswersCount}/${
+            questionsResults.length
+          } (${percentageScore.toFixed(1)}%)`
+        );
+        console.log("✅ Definindo resultado no estado...");
+
         setResult({
           id: assessmentData.id,
           title: assessmentData.title,
@@ -191,8 +266,12 @@ export default function AssessmentResultPage() {
           isCancelled: sessionData.is_cancelled || false,
           cancellationReason: sessionData.cancellation_reason || undefined,
           warningCount: sessionData.warning_count || 0,
+          attemptNumber,
+          maxAttempts: assessmentData.max_attempts || 1,
           questionsResults,
         });
+
+        console.log("🎉 Resultado definido com sucesso!");
       } catch (error: any) {
         console.error("Erro ao carregar resultado:", error);
         setError(
@@ -266,9 +345,14 @@ export default function AssessmentResultPage() {
         </Button>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {result?.title} - Resultado
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-bold">{result?.title} - Resultado</h1>
+            {result && result.maxAttempts > 1 && (
+              <Badge variant="secondary" className="text-base px-3 py-1">
+                Tentativa {result.attemptNumber}/{result.maxAttempts}
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground">{result?.description}</p>
         </div>
 

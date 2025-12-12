@@ -1,4 +1,3 @@
-
 export interface AssessmentQuestion {
   id: string;
   type: "multiple-choice" | "true-false" | "short-answer" | "code" | "matching";
@@ -14,4 +13,6 @@ export interface Assessment {
   description: string;
   duration: number;
   questions: AssessmentQuestion[];
+  maxAttempts?: number;
+  availableFrom?: string | null;
 }

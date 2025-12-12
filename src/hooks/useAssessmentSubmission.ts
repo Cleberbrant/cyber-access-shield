@@ -123,19 +123,35 @@ export function useAssessmentSubmission(
       const score = correctCount;
 
       // Marcar sessão como concluída
-      const { error: updateError } = await supabase
+      console.log(
+        `🔄 Atualizando sessão ${sessionId} como completa com score: ${score}`
+      );
+
+      const { data: updateData, error: updateError } = await supabase
         .from("assessment_sessions")
         .update({
           is_completed: true,
           completed_at: new Date().toISOString(),
           score: score,
         })
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .select();
 
       if (updateError) {
         console.error("Erro ao atualizar sessão:", updateError);
         throw new Error("Erro ao finalizar avaliação.");
       }
+
+      console.log("✅ Sessão atualizada com sucesso:", updateData);
+
+      // Verificar se realmente salvou
+      const { data: verifyData } = await supabase
+        .from("assessment_sessions")
+        .select("id, is_completed, completed_at, score")
+        .eq("id", sessionId)
+        .single();
+
+      console.log("🔍 Verificação da sessão após update:", verifyData);
 
       // Limpar flag de avaliação em andamento
       localStorage.removeItem("assessmentInProgress");
