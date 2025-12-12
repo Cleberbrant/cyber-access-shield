@@ -1,4 +1,3 @@
-
 import { AssessmentCard } from "./AssessmentCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
@@ -11,6 +10,11 @@ interface Assessment {
   description: string | null;
   duration_minutes: number;
   created_at: string;
+  max_attempts: number;
+  available_from: string | null;
+  currentAttempts?: number;
+  hasIncompleteSession?: boolean;
+  hasCompletedAttempt?: boolean;
 }
 
 interface AssessmentsListProps {
@@ -20,6 +24,8 @@ interface AssessmentsListProps {
   onStartAssessment: (assessmentId: string) => void;
   onCreateAssessment: () => void;
   onEditAssessment: (assessmentId: string) => void;
+  onDeleteAssessment: (assessmentId: string, assessmentTitle: string) => void;
+  onViewResult?: (assessmentId: string) => void;
 }
 
 export function AssessmentsList({
@@ -29,6 +35,8 @@ export function AssessmentsList({
   onStartAssessment,
   onCreateAssessment,
   onEditAssessment,
+  onDeleteAssessment,
+  onViewResult,
 }: AssessmentsListProps) {
   if (isLoading) {
     return (
@@ -56,18 +64,17 @@ export function AssessmentsList({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-semibold mb-1">Nenhuma avaliação disponível</h3>
+          <h3 className="text-xl font-semibold mb-1">
+            Nenhuma avaliação disponível
+          </h3>
           <p className="text-muted-foreground text-center max-w-md">
             {isAdmin
               ? "Você ainda não criou nenhuma avaliação. Clique no botão 'Nova Avaliação' para começar."
               : "Não há avaliações disponíveis para você no momento."}
           </p>
-          
+
           {isAdmin && (
-            <Button
-              onClick={onCreateAssessment}
-              className="mt-6"
-            >
+            <Button onClick={onCreateAssessment} className="mt-6">
               <Plus className="mr-2 h-4 w-4" />
               Criar primeira avaliação
             </Button>
@@ -86,6 +93,8 @@ export function AssessmentsList({
           isAdmin={isAdmin}
           onStartAssessment={onStartAssessment}
           onEditAssessment={onEditAssessment}
+          onDeleteAssessment={onDeleteAssessment}
+          onViewResult={onViewResult}
         />
       ))}
     </div>

@@ -22,12 +22,12 @@ import { useAssessmentLoader } from "@/hooks/useAssessmentLoader";
 import { useAssessmentTimer } from "@/hooks/useAssessmentTimer";
 import { useAssessmentAnswers } from "@/hooks/useAssessmentAnswers";
 import { useAssessmentSubmission } from "@/hooks/useAssessmentSubmission";
+import { useSessionProgress } from "@/hooks/useSessionProgress";
 
 export default function AssessmentPage() {
   const { assessmentId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const { toast } = useToast();
   const [retryCount, setRetryCount] = useState(0);
 
@@ -35,10 +35,20 @@ export default function AssessmentPage() {
   const sessionIdParam = searchParams.get("session");
 
   // Carregar dados da avaliação
-  const { assessment, loading, sessionId, loadError } = useAssessmentLoader(
-    assessmentId,
-    sessionIdParam
+  const { assessment, loading, sessionId, sessionProgress, loadError } =
+    useAssessmentLoader(assessmentId, sessionIdParam);
+
+  // Inicializar índice da questão com progresso salvo
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
+    sessionProgress?.currentQuestionIndex || 0
   );
+
+  // Atualizar quando o progresso for carregado
+  useEffect(() => {
+    if (sessionProgress) {
+      setCurrentQuestionIndex(sessionProgress.currentQuestionIndex);
+    }
+  }, [sessionProgress]);
 
   // Hooks personalizados para gerenciar o estado e comportamento
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } =
@@ -53,15 +63,36 @@ export default function AssessmentPage() {
   // Usar a duração exata da avaliação como configurada no banco de dados
   const duration = assessment?.duration;
 
+  // Timer com tempo decorrido inicial
+  const initialTimeElapsed = sessionProgress?.timeElapsedSeconds || 0;
+
+  // Callback para atualização de progresso (não usado ainda, mas preparado)
+  const handleProgressUpdate = (timeElapsed: number) => {
+    // Progresso será salvo pelo hook useSessionProgress
+  };
+
   // Usar handleSubmitAssessment depois que ele foi definido
-  const { formatTimeLeft } = useAssessmentTimer(duration, () => {
-    if (assessment && handleSubmitAssessment) {
-      console.log(
-        "⏰ Tempo esgotado! Finalizando avaliação automaticamente..."
-      );
-      handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = true
-    }
-  });
+  const { timeLeft, timeElapsed, formatTimeLeft } = useAssessmentTimer(
+    duration || 1,
+    initialTimeElapsed,
+    () => {
+      if (assessment && handleSubmitAssessment) {
+        console.log(
+          "⏰ Tempo esgotado! Finalizando avaliação automaticamente..."
+        );
+        handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = true
+      }
+    },
+    handleProgressUpdate
+  );
+
+  // Hook para salvar progresso automaticamente
+  useSessionProgress(
+    sessionId,
+    currentQuestionIndex,
+    timeElapsed,
+    !isSubmitting // Desabilitar durante submissão
+  );
 
   // Função para tentar novamente caso ocorra um erro
   const handleRetry = () => {
