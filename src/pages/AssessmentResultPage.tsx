@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { ResultQuestionRenderer } from "@/components/assessment/ResultQuestionRenderer";
 import { useToast } from "@/hooks/use-toast";
+import { canAttemptAssessment } from "@/utils/assessment-attempts";
 
 interface AssessmentResult {
   id: string;
@@ -65,6 +66,8 @@ export default function AssessmentResultPage() {
   const [result, setResult] = useState<AssessmentResult | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [canRetakeAssessment, setCanRetakeAssessment] =
+    useState<boolean>(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -272,6 +275,18 @@ export default function AssessmentResultPage() {
         });
 
         console.log("🎉 Resultado definido com sucesso!");
+
+        // Verificar se o usuário pode refazer a avaliação
+        const attemptCheck = await canAttemptAssessment(
+          user.id,
+          assessmentId,
+          assessmentData.max_attempts || 1
+        );
+
+        setCanRetakeAssessment(attemptCheck.canAttempt);
+        console.log(
+          `🔄 Pode refazer: ${attemptCheck.canAttempt} (${attemptCheck.currentAttempts}/${attemptCheck.maxAttempts})`
+        );
       } catch (error: any) {
         console.error("Erro ao carregar resultado:", error);
         setError(
@@ -474,6 +489,31 @@ export default function AssessmentResultPage() {
                 </span>
                 <span className="text-sm font-medium">≈ 7 minutos</span>
               </div>
+              {result.maxAttempts > 0 && (
+                <div className="flex justify-between pt-3 border-t">
+                  <span className="text-sm text-muted-foreground">
+                    Tentativas
+                  </span>
+                  <span className="text-sm font-medium">
+                    {result.attemptNumber}/{result.maxAttempts}
+                    {!canRetakeAssessment && (
+                      <Badge variant="destructive" className="ml-2 text-xs">
+                        Esgotadas
+                      </Badge>
+                    )}
+                  </span>
+                </div>
+              )}
+              {result.maxAttempts === 0 && (
+                <div className="flex justify-between pt-3 border-t">
+                  <span className="text-sm text-muted-foreground">
+                    Tentativas
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    Ilimitadas
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -491,14 +531,16 @@ export default function AssessmentResultPage() {
         </div>
 
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
-          <Button
-            variant="outline"
-            className="flex gap-2"
-            onClick={() => navigate(`/assessment/${result?.id}`)}
-          >
-            <FileText className="h-4 w-4" />
-            Refazer Avaliação
-          </Button>
+          {canRetakeAssessment && (
+            <Button
+              variant="outline"
+              className="flex gap-2"
+              onClick={() => navigate(`/assessment/${result?.id}`)}
+            >
+              <FileText className="h-4 w-4" />
+              Refazer Avaliação
+            </Button>
+          )}
           <Button
             className="cyber-button"
             onClick={() => navigate("/dashboard")}
