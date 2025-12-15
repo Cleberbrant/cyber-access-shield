@@ -2,13 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Shield } from "lucide-react";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAssessmentDeletion } from "@/hooks/useAssessmentDeletion";
 import { AssessmentsList } from "@/components/dashboard/AssessmentsList";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { isAdmin, updateAdminStatus } from "@/utils/secure-utils";
+import {
+  isAdmin,
+  updateAdminStatus,
+  logSecurityEvent,
+  SecurityEventType,
+} from "@/utils/secure-utils";
 import { canAttemptAssessment } from "@/utils/assessment-attempts";
 import {
   isAssessmentAvailable,
@@ -154,6 +159,15 @@ export default function Dashboard() {
 
           if (error) throw error;
           sessionId = data.id;
+
+          // Registrar evento de início de sessão com IP
+          await logSecurityEvent({
+            type: SecurityEventType.ASSESSMENT_STARTED,
+            timestamp: new Date().toISOString(),
+            details: `Sessão iniciada para avaliação: ${assessment.title}`,
+            assessmentId: assessmentId,
+            sessionId: sessionId,
+          });
         }
       } else {
         // Criar uma nova sessão
@@ -170,6 +184,15 @@ export default function Dashboard() {
 
         if (error) throw error;
         sessionId = data.id;
+
+        // Registrar evento de início de sessão com IP
+        await logSecurityEvent({
+          type: SecurityEventType.ASSESSMENT_STARTED,
+          timestamp: new Date().toISOString(),
+          details: `Sessão iniciada para avaliação: ${assessment.title}`,
+          assessmentId: assessmentId,
+          sessionId: sessionId,
+        });
       }
 
       // NÃO definir assessmentInProgress aqui - será definido no AssessmentPage
@@ -239,13 +262,16 @@ export default function Dashboard() {
           </div>
 
           {isUserAdmin && (
-            <Button
-              onClick={() => navigate("/create-assessment")}
-              className="mt-4 sm:mt-0"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Avaliação
-            </Button>
+            <div className="flex gap-3 mt-4 sm:mt-0">
+              <Button variant="outline" onClick={() => navigate("/fraud-logs")}>
+                <Shield className="mr-2 h-4 w-4" />
+                Logs
+              </Button>
+              <Button onClick={() => navigate("/create-assessment")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Avaliação
+              </Button>
+            </div>
           )}
         </div>
 

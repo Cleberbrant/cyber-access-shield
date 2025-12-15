@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,15 +10,16 @@ import Dashboard from "./pages/Dashboard";
 import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
 import CreateAssessmentPage from "./pages/CreateAssessmentPage";
+import FraudLogsPage from "./pages/FraudLogsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false
-    }
-  }
+      refetchOnWindowFocus: false,
+    },
+  },
 });
 
 const App = () => (
@@ -33,10 +33,20 @@ const App = () => (
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/assessment/:assessmentId" element={<AssessmentPage />} />
-          <Route path="/assessment-result/:assessmentId" element={<AssessmentResultPage />} />
+          <Route
+            path="/assessment/:assessmentId"
+            element={<AssessmentPage />}
+          />
+          <Route
+            path="/assessment-result/:assessmentId"
+            element={<AssessmentResultPage />}
+          />
           <Route path="/create-assessment" element={<CreateAssessmentPage />} />
-          <Route path="/edit-assessment/:id" element={<CreateAssessmentPage />} />
+          <Route
+            path="/edit-assessment/:id"
+            element={<CreateAssessmentPage />}
+          />
+          <Route path="/fraud-logs" element={<FraudLogsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

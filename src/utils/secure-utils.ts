@@ -167,6 +167,7 @@ export enum SecurityEventType {
   WINDOW_FOCUS = "window_focus",
   FULLSCREEN_EXIT = "fullscreen_exit",
   ASSESSMENT_CANCELLED = "assessment_cancelled",
+  ASSESSMENT_STARTED = "assessment_started",
 }
 
 /**
@@ -202,19 +203,17 @@ export const logSecurityEvent = async (event: SecurityEvent): Promise<void> => {
       timestamp: event.timestamp,
       details: event.details,
       userId: session.user.id,
+      assessmentId: event.assessmentId,
+      sessionId: event.sessionId,
     });
 
-    // Inserir no banco de dados
-    const { error } = await supabase.from("security_logs").insert([
-      {
-        user_id: session.user.id,
-        event_type: event.type,
-        event_details: event.details || null,
-        assessment_id: event.assessmentId || null,
-        session_id: event.sessionId || null,
-        created_at: event.timestamp,
-      },
-    ]);
+    // Usar RPC para capturar IP automaticamente via inet_client_addr()
+    const { error } = await supabase.rpc("insert_security_log", {
+      p_event_type: event.type,
+      p_event_details: event.details || null,
+      p_assessment_id: event.assessmentId || null,
+      p_session_id: event.sessionId || null,
+    });
 
     if (error) {
       console.error("Erro ao registrar evento de segurança:", error);

@@ -78,17 +78,20 @@ export function useAssessmentProtection() {
   const shouldDetectBlur =
     isAssessmentRoute && isAssessmentInProgress && isUserAdmin !== true;
 
-  // Aplicar proteções via hooks
-  useKeyboardProtection(shouldProtect);
-  useMouseProtection(shouldProtect);
-  useBeforeUnloadProtection(shouldShowBeforeUnload, shouldShowBeforeUnload);
-
-  // Obter assessmentId e sessionId da URL para passar ao hook de blur
+  // Obter assessmentId e sessionId da URL para passar aos hooks
   const assessmentId = location.pathname.match(/\/assessment\/([^/?]+)/)?.[1];
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get("session");
 
-  useWindowBlurProtection(shouldDetectBlur, assessmentId, sessionId);
+  // Aplicar proteções via hooks
+  useKeyboardProtection(shouldProtect, assessmentId, sessionId || undefined);
+  useMouseProtection(shouldProtect, assessmentId, sessionId || undefined);
+  useBeforeUnloadProtection(shouldShowBeforeUnload, shouldShowBeforeUnload);
+  useWindowBlurProtection(
+    shouldDetectBlur,
+    assessmentId,
+    sessionId || undefined
+  );
 
   // Log para debug
   useEffect(() => {
@@ -97,16 +100,22 @@ export function useAssessmentProtection() {
       isAdmin: isUserAdmin,
       shouldProtect,
       shouldShowBeforeUnload,
+      shouldDetectBlur,
       isAssessmentRoute,
       isAssessmentInProgress,
+      assessmentId,
+      sessionId,
     });
   }, [
     location.pathname,
     isUserAdmin,
     shouldProtect,
     shouldShowBeforeUnload,
+    shouldDetectBlur,
     isAssessmentRoute,
     isAssessmentInProgress,
+    assessmentId,
+    sessionId,
   ]);
 
   return {
