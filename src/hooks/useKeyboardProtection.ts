@@ -7,8 +7,14 @@ import { logSecurityEvent, SecurityEventType } from "@/utils/secure-utils";
  * Bloqueia: Ctrl+C/V/X/P/S/A, Alt+Tab, F12, Ctrl+Shift+I
  * Registra tentativas de fraude para painel do administrador
  * @param isActive - Se a proteção deve estar ativa
+ * @param assessmentId - ID da avaliação para logging
+ * @param sessionId - ID da sessão para logging
  */
-export function useKeyboardProtection(isActive: boolean) {
+export function useKeyboardProtection(
+  isActive: boolean,
+  assessmentId?: string,
+  sessionId?: string
+) {
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,6 +42,8 @@ export function useKeyboardProtection(isActive: boolean) {
           details: `Tentativa de ${
             e.key === "c" ? "copiar" : e.key === "v" ? "colar" : "recortar"
           } bloqueada`,
+          assessmentId,
+          sessionId,
         });
 
         toast({
@@ -55,6 +63,8 @@ export function useKeyboardProtection(isActive: boolean) {
           type: SecurityEventType.PRINT_ATTEMPT,
           timestamp: new Date().toISOString(),
           details: "Tentativa de imprimir bloqueada",
+          assessmentId,
+          sessionId,
         });
 
         toast({
@@ -73,6 +83,8 @@ export function useKeyboardProtection(isActive: boolean) {
           type: SecurityEventType.KEYBOARD_SHORTCUT,
           timestamp: new Date().toISOString(),
           details: `Atalho Ctrl+${e.key.toUpperCase()} bloqueado`,
+          assessmentId,
+          sessionId,
         });
 
         toast({
@@ -92,6 +104,8 @@ export function useKeyboardProtection(isActive: boolean) {
           type: SecurityEventType.TAB_SWITCH,
           timestamp: new Date().toISOString(),
           details: "Tentativa de alternar janelas (Alt+Tab) bloqueada",
+          assessmentId,
+          sessionId,
         });
 
         toast({
@@ -110,6 +124,8 @@ export function useKeyboardProtection(isActive: boolean) {
           type: SecurityEventType.DEVTOOLS_OPENED,
           timestamp: new Date().toISOString(),
           details: "Tentativa de abrir DevTools bloqueada",
+          assessmentId,
+          sessionId,
         });
 
         toast({
@@ -124,5 +140,5 @@ export function useKeyboardProtection(isActive: boolean) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isActive, toast]);
+  }, [isActive, toast, assessmentId, sessionId]);
 }

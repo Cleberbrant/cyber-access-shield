@@ -6,8 +6,14 @@ import { logSecurityEvent, SecurityEventType } from "@/utils/secure-utils";
  * Hook para proteger contra menu de contexto (botão direito)
  * Registra tentativas de fraude para painel do administrador
  * @param isActive - Se a proteção deve estar ativa
+ * @param assessmentId - ID da avaliação para logging
+ * @param sessionId - ID da sessão para logging
  */
-export function useMouseProtection(isActive: boolean) {
+export function useMouseProtection(
+  isActive: boolean,
+  assessmentId?: string,
+  sessionId?: string
+) {
   const { toast } = useToast();
   const isPopupVisible = useRef(false);
 
@@ -28,6 +34,8 @@ export function useMouseProtection(isActive: boolean) {
             timestamp: new Date().toISOString(),
             details:
               "Tentativa de abrir menu de contexto (botão direito) bloqueada",
+            assessmentId,
+            sessionId,
           });
 
           toast({
@@ -51,5 +59,5 @@ export function useMouseProtection(isActive: boolean) {
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [isActive, toast]);
+  }, [isActive, toast, assessmentId, sessionId]);
 }
