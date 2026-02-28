@@ -11,6 +11,7 @@ import AssessmentPage from "./pages/AssessmentPage";
 import AssessmentResultPage from "./pages/AssessmentResultPage";
 import CreateAssessmentPage from "./pages/CreateAssessmentPage";
 import FraudLogsPage from "./pages/FraudLogsPage";
+import UserManagementPage from "./pages/UserManagementPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ const App = () => (
             element={<CreateAssessmentPage />}
           />
           <Route path="/fraud-logs" element={<FraudLogsPage />} />
+          <Route path="/user-management" element={<UserManagementPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
