@@ -38,7 +38,7 @@ export function useAssessmentSubmission(
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session || session.user.id !== sessionData.user_id) {
+      if (!session?.user.id || session.user.id !== sessionData.user_id) {
         throw new Error("Você não tem permissão para enviar esta avaliação.");
       }
 
