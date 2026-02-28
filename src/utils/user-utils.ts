@@ -15,15 +15,19 @@ import { UserManagementAction, TempPasswordGenerated } from "@/types/user";
 export function generateTempPassword(): TempPasswordGenerated {
   const year = new Date().getFullYear();
 
+  // Gerar bytes aleatórios criptograficamente seguros
+  const randomBytes = new Uint8Array(6);
+  crypto.getRandomValues(randomBytes);
+
   // Gerar 3 letras maiúsculas aleatórias
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const randomLetters = Array.from({ length: 3 }, () =>
-    letters.charAt(Math.floor(Math.random() * letters.length)),
+  const randomLetters = Array.from({ length: 3 }, (_, i) =>
+    letters.charAt(randomBytes[i] % letters.length),
   ).join("");
 
   // Gerar 3 números aleatórios
-  const randomNumbers = Array.from({ length: 3 }, () =>
-    Math.floor(Math.random() * 10),
+  const randomNumbers = Array.from({ length: 3 }, (_, i) =>
+    randomBytes[i + 3] % 10,
   ).join("");
 
   const password = `Temp${year}@${randomLetters}${randomNumbers}`;
@@ -253,7 +257,8 @@ export function isTempPasswordExpired(createdAt: string | null): boolean {
  * Valida email
  */
 export function validateEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Regex segura contra ReDoS - sem backtracking exponencial
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return emailRegex.test(email);
 }
 
