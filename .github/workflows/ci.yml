@@ -28,6 +28,9 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
       - name: TypeScript type check
         run: npx tsc --noEmit
 
