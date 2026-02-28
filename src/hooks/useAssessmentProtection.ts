@@ -79,7 +79,7 @@ export function useAssessmentProtection() {
     isAssessmentRoute && isAssessmentInProgress && isUserAdmin !== true;
 
   // Obter assessmentId e sessionId da URL para passar aos hooks
-  const assessmentId = location.pathname.match(/\/assessment\/([^/?]+)/)?.[1];
+  const assessmentId = /\/assessment\/([^/?]+)/.exec(location.pathname)?.[1];
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get("session");
 
