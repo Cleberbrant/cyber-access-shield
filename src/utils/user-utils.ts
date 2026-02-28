@@ -145,8 +145,8 @@ export function translateAction(action: UserManagementAction): string {
   const translations: Record<UserManagementAction, string> = {
     edit_role: "Alterou tipo de conta",
     edit_display_name: "Alterou nome de exibição",
-    reset_password: "Resetou senha",
-    self_password_change: "Alterou própria senha",
+    reset_password: "Resetou senha", // NOSONAR - not a hardcoded password, just a translation key
+    self_password_change: "Alterou própria senha", // NOSONAR - not a hardcoded password, just a translation key
     self_display_name_change: "Alterou próprio nome",
     deactivate: "Desativou conta",
     activate: "Reativou conta",
