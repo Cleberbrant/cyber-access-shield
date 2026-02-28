@@ -379,7 +379,7 @@ SET display_name = SPLIT_PART(
   '@', 
   1
 )
-WHERE display_name IS NULL OR display_name = '';
+WHERE COALESCE(display_name, '') = '';
 
 -- =============================================================================
 -- FIM DO ARQUIVO
