@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
-import { Plus, Shield } from "lucide-react";
+import { Plus, Shield, Users } from "lucide-react";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAssessmentDeletion } from "@/hooks/useAssessmentDeletion";
 import { AssessmentsList } from "@/components/dashboard/AssessmentsList";
@@ -92,7 +92,7 @@ export default function Dashboard() {
         toast({
           title: "Avaliação não disponível",
           description: `Esta avaliação estará disponível a partir de ${formatAvailabilityDate(
-            assessment.available_from
+            assessment.available_from,
           )}`,
           variant: "destructive",
         });
@@ -105,7 +105,7 @@ export default function Dashboard() {
         await canAttemptAssessment(
           user.id,
           assessmentId,
-          assessment.max_attempts
+          assessment.max_attempts,
         );
 
       if (!canAttempt) {
@@ -201,10 +201,10 @@ export default function Dashboard() {
       // Navegar para a página de avaliação com timestamp para evitar cache
       console.log(
         "Navegando para:",
-        `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`
+        `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`,
       );
       navigate(
-        `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`
+        `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`,
       );
     } catch (error: any) {
       console.error("Erro ao iniciar avaliação:", error);
@@ -221,7 +221,7 @@ export default function Dashboard() {
 
   const handleDeleteAssessment = (
     assessmentId: string,
-    assessmentTitle: string
+    assessmentTitle: string,
   ) => {
     setAssessmentToDelete({ id: assessmentId, title: assessmentTitle });
     setDeleteDialogOpen(true);
@@ -236,7 +236,7 @@ export default function Dashboard() {
 
     const success = await deleteAssessment(
       assessmentToDelete.id,
-      assessmentToDelete.title
+      assessmentToDelete.title,
     );
 
     if (success) {
@@ -266,6 +266,13 @@ export default function Dashboard() {
               <Button variant="outline" onClick={() => navigate("/fraud-logs")}>
                 <Shield className="mr-2 h-4 w-4" />
                 Logs
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/user-management")}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Usuários
               </Button>
               <Button onClick={() => navigate("/create-assessment")}>
                 <Plus className="mr-2 h-4 w-4" />
