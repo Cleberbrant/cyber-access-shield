@@ -266,5 +266,5 @@ export function validateEmail(email: string): boolean {
  * Sanitiza entrada de texto
  */
 export function sanitizeInput(input: string): string {
-  return input.trim().replace(/[<>]/g, "");
+  return input.trim().replaceAll(/[<>]/g, "");
 }

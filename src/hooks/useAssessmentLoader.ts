@@ -96,14 +96,14 @@ export function useAssessmentLoader(
         if (typeof assessmentData.duration_minutes === "number") {
           duration = assessmentData.duration_minutes;
         } else if (typeof assessmentData.duration_minutes === "string") {
-          duration = parseInt(assessmentData.duration_minutes, 10);
+          duration = Number.parseInt(assessmentData.duration_minutes, 10);
         } else {
           // Valor padrão se nenhum dos casos acima for válido
           duration = 1;
         }
 
         // Verificar se a conversão resultou em um número válido
-        if (isNaN(duration) || duration <= 0) {
+        if (Number.isNaN(duration) || duration <= 0) {
           console.warn("Duração inválida após conversão, usando valor padrão");
           duration = 1;
         }
@@ -130,8 +130,7 @@ export function useAssessmentLoader(
           } catch (error) {
             if (retryCount < 3) {
               console.log(
-                `Tentativa ${
-                  retryCount + 1
+                `Tentativa ${retryCount + 1
                 } de carregar questões falhou, tentando novamente...`
               );
               await new Promise((resolve) => setTimeout(resolve, 1000));

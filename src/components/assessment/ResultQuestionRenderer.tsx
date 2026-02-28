@@ -49,9 +49,9 @@ export function ResultQuestionRenderer({
       question.options &&
       question.options.length > 0
     ) {
-      const answerIndex = parseInt(answer);
+      const answerIndex = Number.parseInt(answer);
       if (
-        !isNaN(answerIndex) &&
+        !Number.isNaN(answerIndex) &&
         answerIndex >= 0 &&
         answerIndex < question.options.length
       ) {
@@ -64,8 +64,8 @@ export function ResultQuestionRenderer({
       return answer === "true"
         ? "Verdadeiro"
         : answer === "false"
-        ? "Falso"
-        : answer;
+          ? "Falso"
+          : answer;
     }
 
     return answer;

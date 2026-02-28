@@ -472,6 +472,8 @@ export default function LandingPage() {
                   {/* Área de Demo */}
                   <div className="space-y-6">
                     <div
+                      role="region"
+                      aria-label="Zona de teste de proteção contra cópia"
                       className="bg-gradient-to-br from-cyber-blue/10 to-cyber-teal/10 rounded-lg p-6 border border-cyber-blue/20 min-h-[200px] relative"
                       onCopy={(e) => {
                         e.preventDefault();
