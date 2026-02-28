@@ -148,7 +148,7 @@ export default function CreateAssessmentPage() {
               if (optionsObj.options) {
                 question.options = optionsObj.options;
                 question.correctAnswer =
-                  q.correct_answer !== null ? parseInt(q.correct_answer) : 0;
+                  q.correct_answer !== null ? Number.parseInt(q.correct_answer) : 0;
               }
             } else if (q.question_type === "true_false") {
               question.correctAnswer = q.correct_answer === "true";
@@ -328,7 +328,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    if (!duration || parseInt(duration) <= 0) {
+    if (!duration || Number.parseInt(duration) <= 0) {
       toast({
         title: "Erro",
         description: "A duração da avaliação deve ser um número positivo.",
@@ -337,7 +337,7 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    if (maxAttempts && parseInt(maxAttempts) < 0) {
+    if (maxAttempts && Number.parseInt(maxAttempts) < 0) {
       toast({
         title: "Erro",
         description:
@@ -384,8 +384,8 @@ export default function CreateAssessmentPage() {
           .update({
             title,
             description,
-            duration_minutes: parseInt(duration),
-            max_attempts: parseInt(maxAttempts) || 1,
+            duration_minutes: Number.parseInt(duration),
+            max_attempts: Number.parseInt(maxAttempts) || 1,
             available_from: availableFromTimestamp,
           })
           .eq("id", assessmentId);
@@ -403,8 +403,8 @@ export default function CreateAssessmentPage() {
           .insert({
             title,
             description,
-            duration_minutes: parseInt(duration),
-            max_attempts: parseInt(maxAttempts) || 1,
+            duration_minutes: Number.parseInt(duration),
+            max_attempts: Number.parseInt(maxAttempts) || 1,
             available_from: availableFromTimestamp,
             created_by: user.id,
           })
@@ -507,7 +507,7 @@ export default function CreateAssessmentPage() {
                     onValueChange={(value) =>
                       setCurrentQuestion({
                         ...currentQuestion,
-                        correctAnswer: parseInt(value),
+                        correctAnswer: Number.parseInt(value),
                       })
                     }
                     className="flex items-center"
@@ -1017,14 +1017,14 @@ export default function CreateAssessmentPage() {
                                     {question.type === "multiple_choice"
                                       ? "Múltipla escolha"
                                       : question.type === "true_false"
-                                      ? "Verdadeiro/Falso"
-                                      : question.type === "text"
-                                      ? "Resposta curta"
-                                      : question.type === "code"
-                                      ? "Código"
-                                      : question.type === "matching"
-                                      ? "Correspondência"
-                                      : ""}
+                                        ? "Verdadeiro/Falso"
+                                        : question.type === "text"
+                                          ? "Resposta curta"
+                                          : question.type === "code"
+                                            ? "Código"
+                                            : question.type === "matching"
+                                              ? "Correspondência"
+                                              : ""}
                                   </span>
                                 </div>
                                 <p className="font-medium">{question.text}</p>
@@ -1038,11 +1038,10 @@ export default function CreateAssessmentPage() {
                                           className="flex items-center gap-2"
                                         >
                                           <div
-                                            className={`h-3 w-3 rounded-full ${
-                                              i === question.correctAnswer
+                                            className={`h-3 w-3 rounded-full ${i === question.correctAnswer
                                                 ? "bg-cyber-blue"
                                                 : "bg-muted"
-                                            }`}
+                                              }`}
                                           ></div>
                                           <span
                                             className={

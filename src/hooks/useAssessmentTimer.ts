@@ -10,8 +10,8 @@ export function useAssessmentTimer(
   // Se for zero, undefined ou NaN, será tratado como 1 minuto (valor mínimo)
   const validTime =
     typeof initialTimeInMinutes === "number" &&
-    !isNaN(initialTimeInMinutes) &&
-    initialTimeInMinutes > 0
+      !Number.isNaN(initialTimeInMinutes) &&
+      initialTimeInMinutes > 0
       ? initialTimeInMinutes
       : 1; // Valor mínimo de 1 minuto como fallback
 
@@ -38,7 +38,7 @@ export function useAssessmentTimer(
     // Se o valor mudou e é válido, atualizar o timer
     if (
       typeof initialTimeInMinutes === "number" &&
-      !isNaN(initialTimeInMinutes) &&
+      !Number.isNaN(initialTimeInMinutes) &&
       initialTimeInMinutes > 0
     ) {
       const newTotalSeconds = initialTimeInMinutes * 60;
