@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.*
+.env.local
+.env.production
+
+# Private keys
+*.pem
+*.key
+
+# SonarCloud
+.scannerwork/
