@@ -9,6 +9,7 @@ import { EmailInput } from "./auth-form/EmailInput";
 import { PasswordInput } from "./auth-form/PasswordInput";
 import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
 import { AuthFormFooter } from "./auth-form/AuthFormFooter";
+import { detectDevTools } from "@/utils/secure-utils";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -55,7 +56,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
         navigate("/dashboard");
       }
     };
-    
+
     checkSession();
   }, [navigate]);
 
@@ -114,9 +115,18 @@ export function AuthForm({ type, className }: AuthFormProps) {
   };
 
   const handleLogin = async () => {
+    // Checkpoint: bloquear login se DevTools estiver aberto
+    if (detectDevTools()) {
+      toast({
+        title: "Acesso bloqueado",
+        description: "Feche as ferramentas de desenvolvedor para fazer login.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log("Tentando login com:", email, password);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -148,7 +158,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
       setErrors({
         form: error.message || "Erro ao fazer login. Verifique suas credenciais."
       });
-      
+
       toast({
         title: "Erro ao fazer login",
         description: error.message || "Verifique suas credenciais e tente novamente.",
@@ -160,10 +170,19 @@ export function AuthForm({ type, className }: AuthFormProps) {
   };
 
   const handleRegister = async () => {
+    // Checkpoint: bloquear registro se DevTools estiver aberto
+    if (detectDevTools()) {
+      toast({
+        title: "Acesso bloqueado",
+        description: "Feche as ferramentas de desenvolvedor para criar sua conta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      console.log("Iniciando registro com:", { email, password });
-      
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -185,8 +204,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
       if (data && data.user) {
         toast({
           title: "Registro bem-sucedido",
-          description: data.session 
-            ? "Sua conta foi criada com sucesso! Redirecionando..." 
+          description: data.session
+            ? "Sua conta foi criada com sucesso! Redirecionando..."
             : "Verifique seu email para confirmar o cadastro.",
         });
 
@@ -201,7 +220,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
                 is_admin: false
               }
             ]);
-            
+
           if (profileError) {
             console.error("Erro ao criar perfil:", profileError);
           }
@@ -217,11 +236,11 @@ export function AuthForm({ type, className }: AuthFormProps) {
       }
     } catch (error: any) {
       console.error("Erro ao registrar:", error);
-      
+
       setErrors({
         form: error.message || "Erro ao registrar. Tente novamente mais tarde."
       });
-      
+
       toast({
         title: "Erro ao registrar",
         description: error.message || "Verifique os dados e tente novamente.",
@@ -235,16 +254,16 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    
+
     console.log("Formulário enviado:", { type, email, password, confirmPassword });
-    
+
     if (!validateForm()) {
       console.log("Validação falhou, erros:", errors);
       return;
     }
-    
+
     console.log("Validação bem-sucedida, prosseguindo com o envio");
-    
+
     if (type === "login") {
       await handleLogin();
     } else {
@@ -267,8 +286,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
           {type === "login" ? "Entrar" : "Criar Conta"}
         </CardTitle>
         <CardDescription>
-          {type === "login" 
-            ? "Entre com seu email e senha para acessar sua conta" 
+          {type === "login"
+            ? "Entre com seu email e senha para acessar sua conta"
             : "Preencha suas informações para criar uma nova conta"}
         </CardDescription>
       </CardHeader>
@@ -325,7 +344,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
             </div>
           )}
         </CardContent>
-        
+
         <CardFooter>
           <AuthFormFooter type={type} isLoading={isLoading} navigate={navigate} />
         </CardFooter>

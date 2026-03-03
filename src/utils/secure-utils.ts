@@ -8,16 +8,60 @@ import { supabase } from "@/integrations/supabase/client";
 // =============================================================================
 
 /**
- * Detecta se as ferramentas de desenvolvedor estão abertas
- * Baseado na diferença entre tamanho da janela interna e externa
- * @returns true se DevTools provavelmente está aberto
+ * Detecta se as ferramentas de desenvolvedor estão abertas.
+ * 
+ * Usa comparação com baseline: registra a diferença outerWidth-innerWidth
+ * no primeiro carregamento (quando DevTools presumivelmente está fechado).
+ * Se essa diferença aumentar significativamente, DevTools foi aberto.
+ * 
+ * Isso evita falsos positivos em browsers com barra de favoritos,
+ * extensões, etc. que já consomem espaço na chrome do navegador.
  */
-export const detectDevTools = (): boolean => {
-  const threshold = 160;
-  const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-  const heightThreshold = window.outerHeight - window.innerHeight > threshold;
 
-  return widthThreshold || heightThreshold;
+// Baseline capturado no primeiro carregamento da página
+let baselineWidthDiff: number | null = null;
+let baselineHeightDiff: number | null = null;
+
+function getCurrentDiffs() {
+  return {
+    width: window.outerWidth - window.innerWidth,
+    height: window.outerHeight - window.innerHeight,
+  };
+}
+
+export const detectDevTools = (): boolean => {
+  const current = getCurrentDiffs();
+
+  // Primeiro carregamento: capturar baseline
+  if (baselineWidthDiff === null || baselineHeightDiff === null) {
+    baselineWidthDiff = current.width;
+    baselineHeightDiff = current.height;
+    return false; // Não detectar na primeira checagem
+  }
+
+  // Detectar mudança significativa em relação ao baseline
+  // DevTools docked ocupa pelo menos ~200px, usamos 80px de margem
+  const changeThreshold = 80;
+  const widthChange = current.width - baselineWidthDiff;
+  const heightChange = current.height - baselineHeightDiff;
+
+  if (widthChange > changeThreshold || heightChange > changeThreshold) {
+    return true;
+  }
+
+  // Firebug detection (navegadores legados)
+  if ((window as any).Firebug?.chrome?.isInitialized) return true;
+
+  return false;
+};
+
+/**
+ * Reseta o baseline de detecção.
+ * Usado quando o usuário redimensiona a janela normalmente.
+ */
+export const resetDevToolsBaseline = (): void => {
+  baselineWidthDiff = null;
+  baselineHeightDiff = null;
 };
 
 /**
