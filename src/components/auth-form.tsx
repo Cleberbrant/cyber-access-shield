@@ -133,7 +133,6 @@ export function AuthForm({ type, className }: AuthFormProps) {
       });
 
       if (error) {
-        console.error("Erro de autenticação:", error);
 
         if (error.message === "Email not confirmed" || error.code === "email_not_confirmed") {
           setErrors({
@@ -145,7 +144,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
         throw error;
       }
 
-      console.log("Login bem-sucedido:", data);
+
       toast({
         title: "Login bem-sucedido",
         description: "Redirecionando para o dashboard...",
@@ -153,7 +152,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
 
       navigate("/dashboard");
     } catch (error: any) {
-      console.error("Erro ao fazer login:", error);
+
 
       setErrors({
         form: error.message || "Erro ao fazer login. Verifique suas credenciais."
@@ -195,7 +194,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
         }
       });
 
-      console.log("Resposta do registro:", { data, error });
+
 
       if (error) {
         throw error;
@@ -221,9 +220,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
               }
             ]);
 
-          if (profileError) {
-            console.error("Erro ao criar perfil:", profileError);
-          }
+          // profileError é silenciado — handle_new_user trigger cria o perfil
         }
 
         if (data.session) {
@@ -235,7 +232,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
         throw new Error("Não foi possível criar a conta. Tente novamente mais tarde.");
       }
     } catch (error: any) {
-      console.error("Erro ao registrar:", error);
+
 
       setErrors({
         form: error.message || "Erro ao registrar. Tente novamente mais tarde."
@@ -254,17 +251,10 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-
-    console.log("Formulário enviado:", { type, email, password, confirmPassword });
-
-    if (!validateForm()) {
-      console.log("Validação falhou, erros:", errors);
-      return;
+if (!validateForm()) {
+return;
     }
-
-    console.log("Validação bem-sucedida, prosseguindo com o envio");
-
-    if (type === "login") {
+if (type === "login") {
       await handleLogin();
     } else {
       await handleRegister();

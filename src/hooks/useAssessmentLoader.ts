@@ -82,15 +82,7 @@ export function useAssessmentLoader(
         const assessmentData = await fetchWithTimeout();
 
         // Log detalhado dos dados recebidos para debug da duração
-        console.log("Dados da avaliação carregados:", assessmentData);
-        console.log(
-          "Duração recebida do banco:",
-          assessmentData.duration_minutes,
-          "tipo:",
-          typeof assessmentData.duration_minutes
-        );
-
-        // Garantir que a duração seja um número
+// Garantir que a duração seja um número
         let duration: number;
 
         if (typeof assessmentData.duration_minutes === "number") {
@@ -104,12 +96,8 @@ export function useAssessmentLoader(
 
         // Verificar se a conversão resultou em um número válido
         if (Number.isNaN(duration) || duration <= 0) {
-          console.warn("Duração inválida após conversão, usando valor padrão");
           duration = 1;
         }
-
-        console.log("Duração configurada para uso:", duration, "minutos");
-
         // Buscar questões com retry
         const fetchQuestions = async (retryCount = 0) => {
           try {
@@ -129,11 +117,7 @@ export function useAssessmentLoader(
             return questionsData;
           } catch (error) {
             if (retryCount < 3) {
-              console.log(
-                `Tentativa ${retryCount + 1
-                } de carregar questões falhou, tentando novamente...`
-              );
-              await new Promise((resolve) => setTimeout(resolve, 1000));
+await new Promise((resolve) => setTimeout(resolve, 1000));
               return fetchQuestions(retryCount + 1);
             } else {
               throw error;
@@ -163,7 +147,6 @@ export function useAssessmentLoader(
         // Verificar sessão existente ou criar nova
         if (existingSessionId) {
           // Usar a sessão fornecida na URL
-          console.log("Usando sessão existente:", existingSessionId);
           setSessionId(existingSessionId);
 
           // Carregar progresso da sessão
@@ -172,8 +155,6 @@ export function useAssessmentLoader(
           if (progress) {
             // Verificar se o tempo esgotou enquanto estava offline
             if (isSessionTimeExpired(progress.timeElapsedSeconds, duration)) {
-              console.warn("Sessão expirou por tempo esgotado");
-
               // Marcar sessão como completa com score 0
               await supabase
                 .from("assessment_sessions")
@@ -199,7 +180,6 @@ export function useAssessmentLoader(
             }
 
             setSessionProgress(progress);
-            console.log("Progresso carregado:", progress);
           }
         } else {
           // Criar sessão da avaliação
@@ -217,15 +197,12 @@ export function useAssessmentLoader(
               .single();
 
             if (sessionError) {
-              console.error("Erro ao criar sessão de avaliação:", sessionError);
             } else if (sessionData) {
-              console.log("Nova sessão criada:", sessionData.id);
               setSessionId(sessionData.id);
             }
           }
         }
       } catch (error: any) {
-        console.error("Erro ao carregar avaliação:", error);
         setLoadError(error.message || "Erro ao carregar avaliação");
         toast({
           title: "Erro",
@@ -266,10 +243,7 @@ const mapQuestionType = (questao: any): AssessmentQuestion => {
     case "code":
       const codigo = getJsonProperty<string>(questao.options, "code");
       if (!codigo) {
-        console.warn(
-          `Questão de código com ID ${questao.id} não possui o campo 'code'.`
-        );
-        return { ...tipoBase, code: "// Código não disponível." };
+return { ...tipoBase, code: "// Código não disponível." };
       }
       return { ...tipoBase, code: codigo };
 

@@ -94,9 +94,6 @@ export function useAssessmentDeletion() {
           ? err.message
           : "Erro desconhecido ao deletar avaliação";
       setError(errorMessage);
-
-      console.error("Erro ao deletar avaliação:", err);
-
       toast({
         title: "Erro ao excluir avaliação",
         description: errorMessage,

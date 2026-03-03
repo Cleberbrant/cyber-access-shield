@@ -32,13 +32,11 @@ export async function saveSessionProgress(
       .eq("id", sessionId);
 
     if (error) {
-      console.error("Erro ao salvar progresso da sessão:", error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Erro ao processar salvamento de progresso:", error);
     return false;
   }
 }
@@ -59,7 +57,6 @@ export async function loadSessionProgress(
       .single();
 
     if (error) {
-      console.error("Erro ao carregar progresso da sessão:", error);
       return null;
     }
 
@@ -73,7 +70,6 @@ export async function loadSessionProgress(
       lastActivityAt: data.last_activity_at || new Date().toISOString(),
     };
   } catch (error) {
-    console.error("Erro ao processar progresso da sessão:", error);
     return null;
   }
 }

@@ -77,10 +77,7 @@ export default function AssessmentPage() {
     initialTimeElapsed,
     () => {
       if (assessment && handleSubmitAssessment) {
-        console.log(
-          "⏰ Tempo esgotado! Finalizando avaliação automaticamente..."
-        );
-        handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = true
+handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = true
       }
     },
     handleProgressUpdate
@@ -106,8 +103,6 @@ export default function AssessmentPage() {
   useEffect(() => {
     // Definir flag apenas quando entrar na página de avaliação
     localStorage.setItem("assessmentInProgress", "true");
-    console.log("✅ Flag assessmentInProgress ativada no AssessmentPage");
-
     // Notificar o usuário
     toast({
       title: "Modo Avaliação Ativado",
@@ -118,10 +113,7 @@ export default function AssessmentPage() {
     // Limpar quando o componente for desmontado
     return () => {
       localStorage.removeItem("assessmentInProgress");
-      console.log(
-        "🔴 Flag assessmentInProgress removida ao sair do AssessmentPage"
-      );
-    };
+};
   }, [toast]);
 
   if (loading) {

@@ -19,7 +19,6 @@ export function useUserStats() {
       const { data, error } = await supabase.rpc("get_user_stats");
 
       if (error) {
-        console.error("Erro ao buscar estatísticas:", error);
         toast({
           title: "Erro ao carregar estatísticas",
           description: error.message,
@@ -38,7 +37,6 @@ export function useUserStats() {
         });
       }
     } catch (error) {
-      console.error("Erro ao buscar estatísticas:", error);
       toast({
         title: "Erro ao carregar estatísticas",
         description: "Ocorreu um erro inesperado",

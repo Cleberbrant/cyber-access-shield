@@ -28,7 +28,6 @@ export function useSessionCheck() {
         .single();
       
       if (error || !profile) {
-        console.error("Erro ao buscar perfil:", error);
         return;
       }
       

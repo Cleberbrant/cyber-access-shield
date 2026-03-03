@@ -87,7 +87,6 @@ export default function AssessmentResultPage() {
           .single();
 
         if (assessmentError || !assessmentData) {
-          console.error("Erro ao buscar avaliação:", assessmentError);
           throw new Error("Avaliação não encontrada");
         }
 
@@ -109,15 +108,8 @@ export default function AssessmentResultPage() {
           .order("completed_at", { ascending: true });
 
         if (allSessionsError) {
-          console.error("Erro ao buscar todas as sessões:", allSessionsError);
         }
-
-        console.log(
-          "Total de sessões completas encontradas:",
-          allSessions?.length || 0
-        );
-
-        // Buscamos a sessão mais recente desta avaliação
+// Buscamos a sessão mais recente desta avaliação
         const { data: sessionData, error: sessionError } = await supabase
           .from("assessment_sessions")
           .select(
@@ -131,26 +123,17 @@ export default function AssessmentResultPage() {
           .maybeSingle();
 
         if (sessionError) {
-          console.error("Erro ao buscar sessão:", sessionError);
           throw new Error("Erro ao carregar resultados da sessão");
         }
 
         if (!sessionData) {
-          console.warn("Nenhuma sessão completada para esta avaliação");
-          console.log(
-            "Debug - Verificando todas as sessões sem filtro de is_completed:"
-          );
-
-          // Debug: buscar sessões sem filtro para ver o que existe
+// Debug: buscar sessões sem filtro para ver o que existe
           const { data: debugSessions } = await supabase
             .from("assessment_sessions")
             .select("id, is_completed, completed_at, score")
             .eq("assessment_id", assessmentId)
             .eq("user_id", user.id)
             .order("created_at", { ascending: false });
-
-          console.log("Sessões encontradas (todas):", debugSessions);
-
           setError("Nenhuma sessão completada encontrada para esta avaliação.");
           setLoading(false);
           return;
@@ -160,31 +143,16 @@ export default function AssessmentResultPage() {
         const attemptNumber = allSessions
           ? allSessions.findIndex((s) => s.id === sessionData.id) + 1
           : 1;
-
-        console.log("Dados da sessão básica:", {
-          ...sessionData,
-          assessment: assessmentData,
-          attemptNumber,
-          totalAttempts: allSessions?.length || 0,
-        });
-
-        // Buscamos as questões da avaliação
-        console.log(`🔍 Buscando questões para assessment_id: ${assessmentId}`);
-
+// Buscamos as questões da avaliação
         const { data: questionsData, error: questionsError } = await supabase
           .from("questions")
           .select("id, question_text, correct_answer, options, question_type")
           .eq("assessment_id", assessmentId);
 
         if (questionsError) {
-          console.error("❌ Erro ao buscar questões:", questionsError);
           throw new Error("Erro ao carregar questões da avaliação");
         }
-
-        console.log(`📝 Questões encontradas: ${questionsData?.length || 0}`);
-
         if (!questionsData || questionsData.length === 0) {
-          console.error("❌ Nenhuma questão encontrada para a avaliação");
           setError(
             "Os dados das questões estão incompletos para esta avaliação."
           );
@@ -200,18 +168,9 @@ export default function AssessmentResultPage() {
             .eq("session_id", sessionData.id);
 
         if (userAnswersError) {
-          console.error(
-            "Erro ao buscar respostas do usuário:",
-            userAnswersError
-          );
-          throw new Error("Erro ao carregar respostas do usuário");
+throw new Error("Erro ao carregar respostas do usuário");
         }
-
-        console.log(
-          `💬 Respostas do usuário encontradas: ${userAnswersData?.length || 0}`
-        );
-
-        const userAnswers = userAnswersData.reduce(
+const userAnswers = userAnswersData.reduce(
           (acc: Record<string, any>, item: any) => {
             acc[item.question_id] = item.answer;
             return acc;
@@ -250,15 +209,7 @@ export default function AssessmentResultPage() {
           questionsResults.length > 0
             ? (correctAnswersCount / questionsResults.length) * 100
             : 0;
-
-        console.log(
-          `📊 Resultado calculado: ${correctAnswersCount}/${
-            questionsResults.length
-          } (${percentageScore.toFixed(1)}%)`
-        );
-        console.log("✅ Definindo resultado no estado...");
-
-        setResult({
+setResult({
           id: assessmentData.id,
           title: assessmentData.title,
           description: assessmentData.description,
@@ -273,9 +224,6 @@ export default function AssessmentResultPage() {
           maxAttempts: assessmentData.max_attempts || 1,
           questionsResults,
         });
-
-        console.log("🎉 Resultado definido com sucesso!");
-
         // Verificar se o usuário pode refazer a avaliação
         const attemptCheck = await canAttemptAssessment(
           user.id,
@@ -284,11 +232,7 @@ export default function AssessmentResultPage() {
         );
 
         setCanRetakeAssessment(attemptCheck.canAttempt);
-        console.log(
-          `🔄 Pode refazer: ${attemptCheck.canAttempt} (${attemptCheck.currentAttempts}/${attemptCheck.maxAttempts})`
-        );
-      } catch (error: any) {
-        console.error("Erro ao carregar resultado:", error);
+} catch (error: any) {
         setError(
           error.message ||
             "Ocorreu um erro ao carregar os resultados da avaliação"

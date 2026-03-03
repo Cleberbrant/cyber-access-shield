@@ -53,7 +53,6 @@ export function useAuditLogs(params: AuditLogSearchParams) {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error("Erro ao buscar logs:", error);
         toast({
           title: "Erro ao carregar histórico",
           description: error.message,
@@ -65,7 +64,6 @@ export function useAuditLogs(params: AuditLogSearchParams) {
       setLogs(data || []);
       setTotalCount(count || 0);
     } catch (error) {
-      console.error("Erro ao buscar logs:", error);
       toast({
         title: "Erro ao carregar histórico",
         description: "Ocorreu um erro inesperado",

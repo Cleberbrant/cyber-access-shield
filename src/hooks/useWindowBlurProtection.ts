@@ -105,7 +105,6 @@ export function useWindowBlurProtection(
           await cancelAssessment();
         }
       } catch (error) {
-        console.error("Erro ao processar violação:", error);
       }
     };
 
@@ -161,7 +160,6 @@ export function useWindowBlurProtection(
           navigate(`/assessment-result/${assessmentId}`);
         }, 2000);
       } catch (error) {
-        console.error("Erro ao cancelar avaliação:", error);
       }
     };
 

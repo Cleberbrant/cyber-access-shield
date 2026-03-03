@@ -43,14 +43,9 @@ export function useAssessmentSubmission(
       }
 
       // Remover dialog de confirmação - sempre finalizar quando solicitado
-      console.log(
-        `📝 Finalizando avaliação - Auto-submit: ${autoSubmit}, Total de questões: ${questions.length}`
-      );
-
-      // Verificar e salvar respostas pendentes e calcular se estão corretas
+// Verificar e salvar respostas pendentes e calcular se estão corretas
       for (const question of questions) {
         if (!question || !question.id) {
-          console.warn("⚠️ Questão inválida encontrada:", question);
           continue; // Pular questões inválidas
         }
 
@@ -74,14 +69,7 @@ export function useAssessmentSubmission(
           ).trim();
 
           isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
-
-          console.log(`🔍 Questão ${question.id}:`, {
-            tipo: question.type,
-            respostaUsuario: normalizedUserAnswer,
-            respostaCorreta: normalizedCorrectAnswer,
-            correto: isCorrect,
-          });
-        }
+}
 
         // Garantir que question_id seja salvo corretamente
         const { error: answerError } = await supabase
@@ -99,11 +87,7 @@ export function useAssessmentSubmission(
           );
 
         if (answerError) {
-          console.error(
-            `Erro ao salvar resposta para questão ${question.id}:`,
-            answerError
-          );
-        }
+}
       }
 
       // Calcular pontuação - usar o total de questões, não apenas as respondidas
@@ -115,19 +99,10 @@ export function useAssessmentSubmission(
       const correctCount =
         userAnswers?.filter((a) => a.is_correct === true)?.length || 0;
       const totalQuestions = questions.length;
-
-      console.log(
-        `📊 Pontuação: ${correctCount} corretas de ${totalQuestions} questões`
-      );
-
-      const score = correctCount;
+const score = correctCount;
 
       // Marcar sessão como concluída
-      console.log(
-        `🔄 Atualizando sessão ${sessionId} como completa com score: ${score}`
-      );
-
-      const { data: updateData, error: updateError } = await supabase
+const { data: updateData, error: updateError } = await supabase
         .from("assessment_sessions")
         .update({
           is_completed: true,
@@ -138,21 +113,14 @@ export function useAssessmentSubmission(
         .select();
 
       if (updateError) {
-        console.error("Erro ao atualizar sessão:", updateError);
         throw new Error("Erro ao finalizar avaliação.");
       }
-
-      console.log("✅ Sessão atualizada com sucesso:", updateData);
-
       // Verificar se realmente salvou
       const { data: verifyData } = await supabase
         .from("assessment_sessions")
         .select("id, is_completed, completed_at, score")
         .eq("id", sessionId)
         .single();
-
-      console.log("🔍 Verificação da sessão após update:", verifyData);
-
       // Limpar flag de avaliação em andamento
       localStorage.removeItem("assessmentInProgress");
 
@@ -164,7 +132,6 @@ export function useAssessmentSubmission(
         description: "Suas respostas foram enviadas com sucesso.",
       });
     } catch (error: any) {
-      console.error("Erro ao enviar avaliação:", error);
       toast({
         title: "Erro",
         description:
@@ -178,8 +145,6 @@ export function useAssessmentSubmission(
 
   // Função para cancelar a avaliação atual
   const cancelAssessment = () => {
-    console.log("Cancelando avaliação...");
-
     // Limpar qualquer flag de avaliação em andamento
     localStorage.removeItem("assessmentInProgress");
     sessionStorage.removeItem("assessmentInProgress");

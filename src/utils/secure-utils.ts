@@ -146,13 +146,11 @@ export const isAdmin = async (): Promise<boolean> => {
       .single();
 
     if (error || !profile) {
-      console.error("Erro ao verificar permissões de administrador:", error);
       return false;
     }
 
     return profile.is_admin === true;
-  } catch (error) {
-    console.error("Erro ao verificar permissões de administrador:", error);
+  } catch {
     return false;
   }
 };
@@ -177,8 +175,7 @@ export const isAdminSync = (): boolean => {
       return isAdminValue === "true";
     }
     return false;
-  } catch (error) {
-    console.error("Erro ao verificar permissões de administrador:", error);
+  } catch {
     return false;
   }
 };
@@ -238,18 +235,9 @@ export const logSecurityEvent = async (event: SecurityEvent): Promise<void> => {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      console.warn("Tentativa de log sem sessão ativa");
       return;
     }
 
-    // Log local para desenvolvimento/debug
-    console.warn(`⚠️ EVENTO DE SEGURANÇA: ${event.type}`, {
-      timestamp: event.timestamp,
-      details: event.details,
-      userId: session.user.id,
-      assessmentId: event.assessmentId,
-      sessionId: event.sessionId,
-    });
 
     // Usar RPC para capturar IP automaticamente via inet_client_addr()
     const { error } = await supabase.rpc("insert_security_log", {
@@ -260,12 +248,10 @@ export const logSecurityEvent = async (event: SecurityEvent): Promise<void> => {
     });
 
     if (error) {
-      console.error("Erro ao registrar evento de segurança:", error);
-    } else {
-      console.log("✅ Evento de segurança registrado no banco de dados");
+      // Silenciado em produção — erro registrado apenas internamente
     }
-  } catch (error) {
-    console.error("Erro ao processar log de segurança:", error);
+  } catch {
+    // Silenciado — falha no log não deve impactar o usuário
   }
 };
 
@@ -287,8 +273,7 @@ export const getCurrentUserInfo = async (): Promise<{
       userId: session.user.id,
       email: session.user.email || "unknown",
     };
-  } catch (error) {
-    console.error("Erro ao obter informações do usuário:", error);
+  } catch {
     return null;
   }
 };

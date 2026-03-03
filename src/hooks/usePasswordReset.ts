@@ -71,7 +71,6 @@ export function usePasswordReset() {
       if (onSuccess) onSuccess(tempPassword);
       return tempPassword;
     } catch (error: any) {
-      console.error("Erro ao resetar senha:", error);
       toast({
         title: "Erro ao resetar senha",
         description: error.message || "Ocorreu um erro inesperado",
@@ -95,7 +94,6 @@ export function usePasswordReset() {
       if (error) throw error;
       return true;
     } catch (error: any) {
-      console.error("Erro ao limpar senha temporária:", error);
       return false;
     }
   };

@@ -29,10 +29,6 @@ export function ResultQuestionRenderer({
 }: QuestionResultProps) {
   // Verificar se a questão existe e tem todas as propriedades necessárias
   if (!question || !question.id || !question.text) {
-    console.warn(
-      "⚠️ Questão inválida recebida no ResultQuestionRenderer:",
-      question
-    );
     return null;
   }
 
@@ -79,14 +75,6 @@ export function ResultQuestionRenderer({
   const correctAnswer = formatAnswer(correctAnswerRaw, true);
   const isCorrect = question.correct === true;
 
-  // Log para depuração - verificar se os valores correspondem
-  console.log(`Questão ${index + 1}: 
-    ID: ${question.id}
-    Texto: ${question.text}
-    Resposta do usuário: "${userAnswer}"
-    Resposta correta: "${correctAnswer}"
-    Marcada como correta: ${isCorrect ? "Sim" : "Não"}
-  `);
 
   return (
     <Card key={question.id} className="overflow-hidden">

@@ -34,7 +34,6 @@ export function formatAvailabilityDate(date: string): string {
 
     return `${day}/${month}/${year} às ${hours}:${minutes}`;
   } catch (error) {
-    console.error("Erro ao formatar data:", error);
     return "Data inválida";
   }
 }

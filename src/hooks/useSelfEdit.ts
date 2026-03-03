@@ -141,7 +141,6 @@ export function useSelfEdit() {
       if (onSuccess) onSuccess();
       return true;
     } catch (error: any) {
-      console.error("Erro ao atualizar própria conta:", error);
       toast({
         title: "Erro ao atualizar conta",
         description: error.message || "Ocorreu um erro inesperado",

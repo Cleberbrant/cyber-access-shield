@@ -15,6 +15,16 @@ export default defineConfig(({ mode }) => ({
       "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     },
   },
+  build: {
+    // Remover console.* e debugger do bundle de produção
+    ...(mode === 'production' && {
+      esbuild: {
+        drop: ['console', 'debugger'],
+      },
+    }),
+    // Desabilitar source maps em produção (impede leitura do código original)
+    sourcemap: mode !== 'production',
+  },
   plugins: [
     react(),
     mode === 'development' &&

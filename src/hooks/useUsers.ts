@@ -56,7 +56,6 @@ export function useUsers(params: UserSearchParams) {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error("Erro ao buscar usuários:", error);
         toast({
           title: "Erro ao carregar usuários",
           description: error.message,
@@ -68,7 +67,6 @@ export function useUsers(params: UserSearchParams) {
       setUsers(data || []);
       setTotalCount(count || 0);
     } catch (error) {
-      console.error("Erro ao buscar usuários:", error);
       toast({
         title: "Erro ao carregar usuários",
         description: "Ocorreu um erro inesperado",
