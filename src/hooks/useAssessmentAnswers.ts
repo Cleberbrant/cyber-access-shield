@@ -20,7 +20,6 @@ export function useAssessmentAnswers(sessionId: string | null) {
           .eq("session_id", sessionId);
         
         if (error) {
-          console.error("Erro ao carregar respostas:", error);
           return;
         }
         
@@ -40,7 +39,6 @@ export function useAssessmentAnswers(sessionId: string | null) {
           setAnswers(loadedAnswers);
         }
       } catch (error) {
-        console.error("Erro ao processar respostas:", error);
       }
     };
     
@@ -106,7 +104,6 @@ export function useAssessmentAnswers(sessionId: string | null) {
         });
       
       if (error) {
-        console.error("Erro ao salvar resposta:", error);
         toast({
           title: "Erro ao salvar resposta",
           description: "Suas alterações não foram salvas. Por favor, tente novamente.",
@@ -114,7 +111,6 @@ export function useAssessmentAnswers(sessionId: string | null) {
         });
       }
     } catch (error: any) {
-      console.error("Erro ao processar resposta:", error);
       toast({
         title: "Erro ao processar resposta",
         description: error.message || "Ocorreu um erro ao processar sua resposta.",
@@ -138,7 +134,6 @@ export async function validateAnswers(answers: Record<string, any>, correctAnswe
     if (correctAnswers.hasOwnProperty(questionId)) {
       validationResults[questionId] = answers[questionId] === correctAnswers[questionId];
     } else {
-      console.warn(`Resposta correta não encontrada para a questão ${questionId}`);
       validationResults[questionId] = false;
     }
   }

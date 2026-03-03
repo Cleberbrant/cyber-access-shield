@@ -98,7 +98,6 @@ export function useUserEdit() {
       if (onSuccess) onSuccess();
       return true;
     } catch (error: any) {
-      console.error("Erro ao atualizar usuário:", error);
       toast({
         title: "Erro ao atualizar usuário",
         description: error.message || "Ocorreu um erro inesperado",

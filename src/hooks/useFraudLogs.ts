@@ -30,16 +30,7 @@ export function useFraudLogs(filters?: FraudLogsFilters) {
 
       if (error) throw error;
 
-      console.log(
-        `📊 Logs encontrados para avaliação ${assessmentId}:`,
-        data?.length
-      );
-      console.log(
-        "📋 Tipos de eventos encontrados:",
-        data?.map((l) => l.event_type)
-      );
-
-      if (!data || data.length === 0) return null;
+if (!data || data.length === 0) return null;
 
       // Primeiro, coletar todas as sessões únicas com suas datas
       const sessionInfoMap = new Map<
@@ -143,7 +134,6 @@ export function useFraudLogs(filters?: FraudLogsFilters) {
         total_violations: data.length,
       };
     } catch (error) {
-      console.error("Erro ao buscar logs da avaliação:", error);
       return null;
     }
   };
@@ -162,7 +152,6 @@ export function useFraudLogs(filters?: FraudLogsFilters) {
 
       return data || [];
     } catch (error) {
-      console.error("Erro ao buscar logs gerais:", error);
       return [];
     }
   };
@@ -199,7 +188,6 @@ export function useFraudLogs(filters?: FraudLogsFilters) {
       const results = await Promise.all(assessmentLogsPromises);
       return results.filter(Boolean) as AssessmentLogs[];
     } catch (error) {
-      console.error("Erro ao buscar logs de avaliações:", error);
       return [];
     }
   };
@@ -249,7 +237,6 @@ export function useFraudLogs(filters?: FraudLogsFilters) {
       setLogs(allLogs);
       setStats(calculateStats(allLogs));
     } catch (error) {
-      console.error("Erro ao carregar logs:", error);
       toast({
         title: "Erro ao carregar logs",
         description: "Não foi possível carregar os logs de fraude.",

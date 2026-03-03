@@ -29,13 +29,11 @@ export async function getAttemptsCount(
       .is("is_completed", true);
 
     if (error) {
-      console.error("Erro ao contar tentativas:", error);
       return 0;
     }
 
     return data?.length || 0;
   } catch (error) {
-    console.error("Erro ao processar contagem de tentativas:", error);
     return 0;
   }
 }
@@ -82,7 +80,6 @@ export async function canAttemptAssessment(
 
     return result;
   } catch (error) {
-    console.error("Erro ao verificar tentativas:", error);
     return {
       canAttempt: false,
       currentAttempts: 0,
@@ -114,13 +111,11 @@ export async function getIncompleteSession(
       .maybeSingle();
 
     if (error) {
-      console.error("Erro ao buscar sessão incompleta:", error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error("Erro ao processar sessão incompleta:", error);
     return null;
   }
 }

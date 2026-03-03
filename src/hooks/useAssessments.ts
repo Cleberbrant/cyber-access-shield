@@ -87,7 +87,6 @@ export function useAssessments() {
 
       setAssessments(assessmentsWithAttempts);
     } catch (error: any) {
-      console.error("Erro ao carregar dados:", error);
       toast({
         title: "Erro",
         description:

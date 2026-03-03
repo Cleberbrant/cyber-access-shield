@@ -170,7 +170,6 @@ export default function CreateAssessmentPage() {
 
           setQuestions(formattedQuestions);
         } catch (error) {
-          console.error("Erro ao carregar avaliação:", error);
           toast({
             title: "Erro",
             description: "Não foi possível carregar os dados da avaliação.",
@@ -414,12 +413,7 @@ export default function CreateAssessmentPage() {
         if (error) throw error;
         savedAssessmentId = data.id;
       }
-
-      console.log(
-        `📝 Salvando ${questions.length} questões para avaliação ${savedAssessmentId}`
-      );
-
-      for (let i = 0; i < questions.length; i++) {
+for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
 
         const questionData: any = {
@@ -444,36 +438,16 @@ export default function CreateAssessmentPage() {
         } else if (q.type === "matching") {
           questionData.options = { matches: q.matches };
         }
-
-        console.log(`  💾 Salvando questão ${i + 1}/${questions.length}:`, {
-          type: q.type,
-          text: q.text.substring(0, 50),
-          correctAnswer: q.correctAnswer,
-          correctAnswerInDB: questionData.correct_answer,
-          hasOptions: !!questionData.options,
-        });
-
-        const { data: insertedQuestion, error } = await supabase
+const { data: insertedQuestion, error } = await supabase
           .from("questions")
           .insert(questionData)
           .select();
 
         if (error) {
-          console.error(`❌ Erro ao salvar questão ${i + 1}:`, error);
           throw error;
         }
-
-        console.log(
-          `  ✅ Questão ${i + 1} salva com ID:`,
-          insertedQuestion?.[0]?.id
-        );
-      }
-
-      console.log(
-        `🎉 Todas as ${questions.length} questões foram salvas com sucesso!`
-      );
-
-      toast({
+}
+toast({
         title: isEditMode ? "Avaliação atualizada" : "Avaliação criada",
         description: isEditMode
           ? "A avaliação foi atualizada com sucesso."
@@ -482,7 +456,6 @@ export default function CreateAssessmentPage() {
 
       navigate("/dashboard");
     } catch (error) {
-      console.error("Erro ao salvar avaliação:", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar a avaliação. Tente novamente.",

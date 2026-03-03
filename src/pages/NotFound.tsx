@@ -10,11 +10,7 @@ const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    console.error(
-      "404 Error: Tentativa de acesso a rota inexistente:",
-      location.pathname
-    );
-  }, [location.pathname]);
+}, [location.pathname]);
 
   return (
     <div className="min-h-screen flex flex-col">

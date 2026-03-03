@@ -46,8 +46,6 @@ export function useAssessmentProtection() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("🔑 Auth state change:", event);
-
       if (event === "SIGNED_OUT") {
         // Limpar estado de admin ao fazer logout
         localStorage.removeItem("isAdmin");
@@ -95,18 +93,7 @@ export function useAssessmentProtection() {
 
   // Log para debug
   useEffect(() => {
-    console.log("useAssessmentProtection:", {
-      route: location.pathname,
-      isAdmin: isUserAdmin,
-      shouldProtect,
-      shouldShowBeforeUnload,
-      shouldDetectBlur,
-      isAssessmentRoute,
-      isAssessmentInProgress,
-      assessmentId,
-      sessionId,
-    });
-  }, [
+}, [
     location.pathname,
     isUserAdmin,
     shouldProtect,

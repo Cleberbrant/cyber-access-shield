@@ -199,15 +199,10 @@ export default function Dashboard() {
       // Isso evita o popup de beforeunload durante navegação programática
 
       // Navegar para a página de avaliação com timestamp para evitar cache
-      console.log(
-        "Navegando para:",
-        `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`,
-      );
-      navigate(
+navigate(
         `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`,
       );
     } catch (error: any) {
-      console.error("Erro ao iniciar avaliação:", error);
       toast({
         title: "Erro",
         description:

@@ -65,7 +65,6 @@ export function useUserActivation() {
       if (onSuccess) onSuccess();
       return true;
     } catch (error: any) {
-      console.error("Erro ao desativar conta:", error);
       toast({
         title: "Erro ao desativar conta",
         description: error.message || "Ocorreu um erro inesperado",
@@ -133,7 +132,6 @@ export function useUserActivation() {
       if (onSuccess) onSuccess();
       return true;
     } catch (error: any) {
-      console.error("Erro ao reativar conta:", error);
       toast({
         title: "Erro ao reativar conta",
         description: error.message || "Ocorreu um erro inesperado",
