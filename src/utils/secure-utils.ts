@@ -134,29 +134,6 @@ export const isAuthenticatedSync = (): boolean => {
   return !!session;
 };
 
-/**
- * Verifica admin de forma síncrona via localStorage
- * Use apenas quando versão assíncrona não for viável
- */
-export const isAdminSync = (): boolean => {
-  try {
-    const isAdminValue = localStorage.getItem("isAdmin");
-    if (isAdminValue) {
-      return isAdminValue === "true";
-    }
-    return false;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Atualiza o status de admin no localStorage para acesso síncrono
- */
-export const updateAdminStatus = async (): Promise<void> => {
-  const adminStatus = await isAdmin();
-  localStorage.setItem("isAdmin", adminStatus.toString());
-};
 
 // =============================================================================
 // SISTEMA DE LOGGING DE FRAUDES (para painel do professor)

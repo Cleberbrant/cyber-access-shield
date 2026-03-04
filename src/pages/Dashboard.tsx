@@ -10,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import {
   isAdmin,
-  updateAdminStatus,
   logSecurityEvent,
   SecurityEventType,
 } from "@/utils/secure-utils";
@@ -48,15 +47,8 @@ export default function Dashboard() {
     localStorage.removeItem("assessmentInProgress");
 
     const checkAdminStatus = async () => {
-      // SEMPRE revalidar do banco de dados (não confiar no cache)
       const adminStatus = await isAdmin();
       setIsUserAdmin(adminStatus);
-
-      // Atualizar localStorage para que outros componentes usem o valor correto
-      await updateAdminStatus();
-
-      // Forçar atualização do hook de proteção
-      window.dispatchEvent(new Event("storage"));
     };
 
     checkAdminStatus();
@@ -199,7 +191,7 @@ export default function Dashboard() {
       // Isso evita o popup de beforeunload durante navegação programática
 
       // Navegar para a página de avaliação com timestamp para evitar cache
-navigate(
+      navigate(
         `/assessment/${assessmentId}?session=${sessionId}&t=${Date.now()}`,
       );
     } catch (error: any) {

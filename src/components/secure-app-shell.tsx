@@ -16,7 +16,6 @@ export function SecureAppShell({ children }: SecureAppShellProps) {
 
   const handleLogout = async () => {
     // Limpar localStorage antes de fazer logout
-    localStorage.removeItem("isAdmin");
     localStorage.removeItem("assessmentInProgress");
 
     await supabase.auth.signOut();

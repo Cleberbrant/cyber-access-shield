@@ -95,7 +95,8 @@ A estratégia adotada prioriza **funções puras** — funções sem efeitos col
 | [session-progress.ts](file:///d:/cyber-access-shield/src/utils/session-progress.ts) | 10 | funções puras 100% | [isSessionTimeExpired](file:///d:/cyber-access-shield/src/utils/session-progress.ts#81-94), [calculateTimeRemaining](file:///d:/cyber-access-shield/src/utils/session-progress.ts#95-109) |
 | [lib/utils.ts](file:///d:/cyber-access-shield/src/lib/utils.ts) | 5 | 100% | [cn](file:///d:/cyber-access-shield/src/lib/utils.ts#4-7) (class name merge utility) |
 | [date-utils.ts](file:///d:/cyber-access-shield/src/utils/date-utils.ts) | 3 | 100% | [formatDate](file:///d:/cyber-access-shield/src/utils/date-utils.ts#2-10) |
-| **Total** | **113** | — | **~26 funções** |
+| [secure-utils.ts](file:///d:/cyber-access-shield/src/utils/secure-utils.ts) | 13 | detectDevTools + sanitizeInput | [detectDevTools](file:///d:/cyber-access-shield/src/utils/secure-utils.ts#24-35) (threshold + Firebug), [sanitizeInput](file:///d:/cyber-access-shield/src/utils/secure-utils.ts#59-68) (XSS, HTML entities, edge cases) |
+| **Total** | **126** | — | **~28 funções** |
 
 ### 3.3. Cobertura no SonarCloud
 
@@ -122,7 +123,7 @@ Três pipelines automatizadas foram configuradas via GitHub Actions:
 | Setup Node.js | Configura Node.js 20 com cache npm |
 | Install | `npm ci` |
 | ESLint | Lint com plugins de segurança (`continue-on-error: true` para não bloquear) |
-| Testes | `npm run test:coverage` — executa 113 testes e gera lcov |
+| Testes | `npm run test:coverage` — executa 126 testes e gera lcov |
 | Type Check | `npx tsc --noEmit` — verificação de tipos |
 | Build | `npm run build` — build de produção |
 
@@ -212,25 +213,59 @@ As regras de segurança estão configuradas como `warn` para não bloquear o bui
 
 ## 7. Proteções no Nível de Aplicação
 
-### 6.1. Headers de Segurança HTTP
+### 7.1. Headers de Segurança HTTP
 
-| Header | Valor | Proteção |
-|--------|-------|----------|
-| `X-Content-Type-Options` | `nosniff` | Impede MIME-type sniffing pelo navegador |
-| `X-Frame-Options` | `DENY` | Impede embedding via iframe (clickjacking) |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limita informações de referrer em requisições cross-origin |
+Headers configurados em [vite.config.ts](file:///d:/cyber-access-shield/vite.config.ts) — todos os modos recebem headers básicos; CSP, HSTS e X-XSS-Protection são aplicados apenas em produção:
 
-Configurados via meta tags no `index.html` e no dev server do `vite.config.ts`.
+| Header | Valor | Proteção | Modo |
+|--------|-------|----------|------|
+| `X-Content-Type-Options` | `nosniff` | Impede MIME-type sniffing pelo navegador | Todos |
+| `X-Frame-Options` | `DENY` | Impede embedding via iframe (clickjacking) | Todos |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limita informações de referrer em requisições cross-origin | Todos |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Restringe acesso a APIs sensíveis do navegador | Todos |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline' ...` | Previne XSS controlando fontes de scripts, estilos e conexões | Produção |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` | Força HTTPS por 1 ano, prevenindo ataques man-in-the-middle | Produção |
+| `X-XSS-Protection` | `1; mode=block` | Proteção XSS legada para navegadores antigos | Produção |
 
-### 6.2. Proteções de Dados
+### 7.2. Proteção do Gabarito — Correção Server-Side
+
+O sistema utiliza uma **RPC (Remote Procedure Call)** no Supabase para correção de avaliações. A coluna `correct_answer` da tabela `questions` **nunca é enviada ao frontend**:
+
+| Camada | Antes | Depois |
+|--------|-------|--------|
+| Frontend query | `select('*')` incluía `correct_answer` | `select('id, question_text, options, ...')` exclui `correct_answer` |
+| Correção | JavaScript no browser comparava respostas | RPC `submit_and_grade_assessment` compara no PostgreSQL |
+| Resultado | Aluno podia inspecionar Network e ver gabarito | Respostas corretas nunca saem do banco de dados |
+
+### 7.3. Detecção de DevTools
+
+Mecanismo de detecção de ferramentas de desenvolvedor implementado em [secure-utils.ts](file:///d:/cyber-access-shield/src/utils/secure-utils.ts) e [useDevToolsDetection.ts](file:///d:/cyber-access-shield/src/hooks/useDevToolsDetection.ts):
+
+- **Threshold absoluto de 129px**: diferença entre `outerWidth/outerHeight` e `innerWidth/innerHeight` acima de 129px indica DevTools docked;
+- **Detecção Firebug** (navegadores legados);
+- **Bypass para administradores**: status admin verificado via Supabase (não localStorage);
+- **Bloqueio pre-React**: atalhos F12, Ctrl+Shift+I, Ctrl+U e menu de contexto bloqueados via script inline no `index.html` (executa antes do React montar).
+
+### 7.4. Hardening de Build (Produção)
+
+Configurações em [vite.config.ts](file:///d:/cyber-access-shield/vite.config.ts) para builds de produção:
+
+| Configuração | Efeito |
+|---|---|
+| `esbuild.drop: ['console', 'debugger']` | Remove **todas** as chamadas `console.*` e `debugger` do bundle |
+| `sourcemap: false` | Desabilita source maps — código fica minificado e ilegível |
+
+### 7.5. Proteções de Dados
 
 | Prática | Implementação |
 |---------|--------------|
 | Geração criptográfica de senhas | `crypto.getRandomValues()` em `generateTempPassword()` |
-| Sanitização de entradas | `sanitizeInput()` remove tags HTML e caracteres `<` `>` |
+| Sanitização de entradas | `sanitizeInput()` usa DOM textContent para encoding seguro de HTML |
 | Validação de e-mail sem ReDoS | Regex robusta sem backtracking exponencial |
-| Row Level Security (RLS) | Políticas no PostgreSQL do Supabase por perfil (admin/aluno) |
+| Row Level Security (RLS) | 7 tabelas com RLS habilitado + 38 políticas por perfil (admin/aluno) |
 | Tratamento NULL-safe em SQL | Uso de `COALESCE()` para evitar comportamento inesperado |
+| Admin status verificado server-side | `isAdmin()` sempre consulta Supabase, nunca localStorage |
+| Views com security_barrier | `security_report` e `user_management_view` com `security_barrier = true` + acesso `anon` revogado |
 
 ### 6.3. Arquivos de Configuração de Segurança
 
@@ -267,17 +302,24 @@ As práticas implementadas se alinham com as seguintes práticas do **OWASP SAMM
 | Reliability Issues | 23 | 0 |
 | Maintainability Issues (novos) | 11 | 0 |
 | Vulnerabilidades em dependências | 6 (4 high + 2 moderate) | 0 |
-| Testes unitários | 0 | 113 |
+| Testes unitários | 0 | 126 (7 arquivos) |
 | Cobertura em utilitários | 0% | 87-100% |
 | Pipelines CI/CD | 0 | 3 + Dependabot |
 | Supply chain protection | Nenhuma | SHA pinning + Dependabot + npm overrides |
+| Gabarito exposto no frontend | Sim (`select('*')` incluía `correct_answer`) | Não — RPC server-side, gabarito nunca sai do banco |
+| Admin bypass via localStorage | Sim (`isAdminSync()` lia localStorage) | Não — `isAdmin()` sempre verifica via Supabase |
+| Headers de segurança (CSP/HSTS) | Nenhum | CSP + HSTS + X-XSS-Protection em produção |
+| Console.logs em produção | ~27 arquivos com logs sensíveis | 0 — `esbuild.drop` remove em build |
+| Source maps em produção | Habilitados | Desabilitados |
+| DevTools detection | Nenhuma | Threshold 129px + Firebug + bloqueio de atalhos |
 
 ---
 
 ## 10. Limitações e Trabalhos Futuros
 
-1. **Testes de componentes React**: Atualmente apenas funções puras são testadas. Testes de componentes com React Testing Library podem elevar a cobertura geral;
+1. **Testes de componentes React**: Atualmente apenas funções puras e utilitários de segurança são testados. Testes de componentes com React Testing Library e jsdom podem elevar a cobertura geral;
 2. **DAST (Dynamic Application Security Testing)**: Testes dinâmicos de segurança (ex: ZAP Proxy) não foram implementados;
-3. **Content Security Policy (CSP)**: O header CSP não foi configurado por incompatibilidade com scripts inline gerados pelo Vite;
-4. **Auditoria de acesso**: Logs de segurança são armazenados no banco mas não há sistema de alertas automatizado;
-5. **Testes de penetração**: Nenhum pentest formal foi realizado no projeto.
+3. **Auditoria de acesso**: Logs de segurança são armazenados no banco mas não há sistema de alertas automatizado;
+4. **Testes de penetração**: Nenhum pentest formal foi realizado no projeto;
+5. **MFA (Multi-Factor Authentication)**: Configuração de MFA disponível no Supabase mas ainda não habilitada;
+6. **Leaked Password Protection**: Verificação contra HaveIBeenPwned disponível no Supabase mas não habilitada.

@@ -82,7 +82,7 @@ export function useAssessmentLoader(
         const assessmentData = await fetchWithTimeout();
 
         // Log detalhado dos dados recebidos para debug da duração
-// Garantir que a duração seja um número
+        // Garantir que a duração seja um número
         let duration: number;
 
         if (typeof assessmentData.duration_minutes === "number") {
@@ -104,7 +104,7 @@ export function useAssessmentLoader(
             const { data: questionsData, error: questionsError } =
               await supabase
                 .from("questions")
-                .select("*")
+                .select("id, assessment_id, question_text, question_type, options, points, order_index")
                 .eq("assessment_id", assessmentId)
                 .order("order_index");
 
@@ -117,7 +117,7 @@ export function useAssessmentLoader(
             return questionsData;
           } catch (error) {
             if (retryCount < 3) {
-await new Promise((resolve) => setTimeout(resolve, 1000));
+              await new Promise((resolve) => setTimeout(resolve, 1000));
               return fetchQuestions(retryCount + 1);
             } else {
               throw error;
@@ -243,7 +243,7 @@ const mapQuestionType = (questao: any): AssessmentQuestion => {
     case "code":
       const codigo = getJsonProperty<string>(questao.options, "code");
       if (!codigo) {
-return { ...tipoBase, code: "// Código não disponível." };
+        return { ...tipoBase, code: "// Código não disponível." };
       }
       return { ...tipoBase, code: codigo };
 
