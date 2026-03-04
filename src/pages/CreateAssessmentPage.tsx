@@ -26,9 +26,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  isAdminSync,
+  isAdmin as checkIsAdmin,
   sanitizeInput,
-  updateAdminStatus,
 } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -68,7 +67,7 @@ export default function CreateAssessmentPage() {
   const { id: assessmentId } = useParams();
   const isEditMode = !!assessmentId;
 
-  const [isUserAdmin, setIsUserAdmin] = useState(() => isAdminSync());
+  const [isUserAdmin, setIsUserAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [title, setTitle] = useState("");
@@ -89,10 +88,10 @@ export default function CreateAssessmentPage() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      await updateAdminStatus();
-      setIsUserAdmin(isAdminSync());
+      const adminStatus = await checkIsAdmin();
+      setIsUserAdmin(adminStatus);
 
-      if (!isAdminSync()) {
+      if (!adminStatus) {
         navigate("/dashboard");
         return;
       }
@@ -185,8 +184,11 @@ export default function CreateAssessmentPage() {
     }
   }, [assessmentId, isEditMode, navigate, toast]);
 
-  if (!isUserAdmin) {
-    navigate("/dashboard");
+  // Enquanto verifica admin, mostrar loading; após verificar, se não for admin, retornar null
+  if (isUserAdmin === null) {
+    return null;
+  }
+  if (isUserAdmin === false) {
     return null;
   }
 
@@ -413,7 +415,7 @@ export default function CreateAssessmentPage() {
         if (error) throw error;
         savedAssessmentId = data.id;
       }
-for (let i = 0; i < questions.length; i++) {
+      for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
 
         const questionData: any = {
@@ -438,7 +440,7 @@ for (let i = 0; i < questions.length; i++) {
         } else if (q.type === "matching") {
           questionData.options = { matches: q.matches };
         }
-const { data: insertedQuestion, error } = await supabase
+        const { data: insertedQuestion, error } = await supabase
           .from("questions")
           .insert(questionData)
           .select();
@@ -446,8 +448,8 @@ const { data: insertedQuestion, error } = await supabase
         if (error) {
           throw error;
         }
-}
-toast({
+      }
+      toast({
         title: isEditMode ? "Avaliação atualizada" : "Avaliação criada",
         description: isEditMode
           ? "A avaliação foi atualizada com sucesso."
@@ -1012,8 +1014,8 @@ toast({
                                         >
                                           <div
                                             className={`h-3 w-3 rounded-full ${i === question.correctAnswer
-                                                ? "bg-cyber-blue"
-                                                : "bg-muted"
+                                              ? "bg-cyber-blue"
+                                              : "bg-muted"
                                               }`}
                                           ></div>
                                           <span

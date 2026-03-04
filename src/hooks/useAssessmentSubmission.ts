@@ -20,107 +20,52 @@ export function useAssessmentSubmission(
     setIsSubmitting(true);
 
     try {
-      // Verificar sessão e permissões
+      // Verificar sessão
       if (!sessionId) {
         throw new Error("Sessão de avaliação não encontrada.");
-      }
-
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("assessment_sessions")
-        .select("id, user_id")
-        .eq("id", sessionId)
-        .single();
-
-      if (sessionError || !sessionData) {
-        throw new Error("Sessão de avaliação não encontrada ou expirada.");
       }
 
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session?.user.id || session.user.id !== sessionData.user_id) {
-        throw new Error("Você não tem permissão para enviar esta avaliação.");
+      if (!session?.user.id) {
+        throw new Error("Você não está autenticado.");
       }
 
-      // Remover dialog de confirmação - sempre finalizar quando solicitado
-// Verificar e salvar respostas pendentes e calcular se estão corretas
-      for (const question of questions) {
-        if (!question || !question.id) {
-          continue; // Pular questões inválidas
+      // Montar array de respostas para a RPC
+      const answersPayload = questions
+        .filter((q) => q && q.id)
+        .map((question) => {
+          const userAnswer = answers[question.id] || "";
+          const answerStr =
+            typeof userAnswer === "object"
+              ? JSON.stringify(userAnswer)
+              : String(userAnswer);
+          return {
+            question_id: question.id,
+            answer: answerStr,
+          };
+        });
+
+      // Chamar RPC server-side — a correção acontece no banco
+      // O correct_answer NUNCA é enviado ao frontend
+      const { data, error } = await supabase.rpc(
+        "submit_and_grade_assessment",
+        {
+          p_session_id: sessionId,
+          p_answers: answersPayload as any,
         }
+      );
 
-        const userAnswer = answers[question.id] || "";
-        const answerStr =
-          typeof userAnswer === "object"
-            ? JSON.stringify(userAnswer)
-            : String(userAnswer);
-
-        // Verificar se a resposta está correta comparando com correct_answer
-        let isCorrect = false;
-
-        if (
-          question.correct_answer !== undefined &&
-          question.correct_answer !== null
-        ) {
-          // Normalizar ambas as respostas para string e remover espaços
-          const normalizedUserAnswer = String(answerStr).trim();
-          const normalizedCorrectAnswer = String(
-            question.correct_answer
-          ).trim();
-
-          isCorrect = normalizedUserAnswer === normalizedCorrectAnswer;
-}
-
-        // Garantir que question_id seja salvo corretamente
-        const { error: answerError } = await supabase
-          .from("user_answers")
-          .upsert(
-            {
-              session_id: sessionId,
-              question_id: question.id,
-              answer: answerStr,
-              is_correct: isCorrect,
-            },
-            {
-              onConflict: "session_id,question_id",
-            }
-          );
-
-        if (answerError) {
-}
+      if (error) {
+        throw new Error(error.message || "Erro ao submeter avaliação.");
       }
 
-      // Calcular pontuação - usar o total de questões, não apenas as respondidas
-      const { data: userAnswers } = await supabase
-        .from("user_answers")
-        .select("is_correct")
-        .eq("session_id", sessionId);
-
-      const correctCount =
-        userAnswers?.filter((a) => a.is_correct === true)?.length || 0;
-      const totalQuestions = questions.length;
-const score = correctCount;
-
-      // Marcar sessão como concluída
-const { data: updateData, error: updateError } = await supabase
-        .from("assessment_sessions")
-        .update({
-          is_completed: true,
-          completed_at: new Date().toISOString(),
-          score: score,
-        })
-        .eq("id", sessionId)
-        .select();
-
-      if (updateError) {
-        throw new Error("Erro ao finalizar avaliação.");
+      const result = data as any;
+      if (result && !result.success) {
+        throw new Error(result.error || "Erro ao processar avaliação.");
       }
-      // Verificar se realmente salvou
-      const { data: verifyData } = await supabase
-        .from("assessment_sessions")
-        .select("id, is_completed, completed_at, score")
-        .eq("id", sessionId)
-        .single();
+
       // Limpar flag de avaliação em andamento
       localStorage.removeItem("assessmentInProgress");
 

@@ -4,7 +4,7 @@ import { useMouseProtection } from "./useMouseProtection";
 import { useBeforeUnloadProtection } from "./useBeforeUnloadProtection";
 import { useWindowBlurProtection } from "./useWindowBlurProtection";
 import { useEffect, useState } from "react";
-import { isAdminSync } from "@/utils/secure-utils";
+import { isAdmin } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -31,33 +31,26 @@ export function useAssessmentProtection() {
 
   // Verificar perfil do usuário
   useEffect(() => {
-    const checkAdminStatus = () => {
-      const adminStatus = isAdminSync();
+    const checkAdminStatus = async () => {
+      const adminStatus = await isAdmin();
       setIsUserAdmin(adminStatus);
     };
 
     // Checar imediatamente
     checkAdminStatus();
 
-    // Recheck quando localStorage mudar (após login, logout, etc)
-    window.addEventListener("storage", checkAdminStatus);
-
     // Listener de mudança de autenticação do Supabase
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
-        // Limpar estado de admin ao fazer logout
-        localStorage.removeItem("isAdmin");
         setIsUserAdmin(null);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        // Revalidar status de admin ao fazer login ou refresh
         checkAdminStatus();
       }
     });
 
     return () => {
-      window.removeEventListener("storage", checkAdminStatus);
       subscription.unsubscribe();
     };
   }, []);
@@ -93,7 +86,7 @@ export function useAssessmentProtection() {
 
   // Log para debug
   useEffect(() => {
-}, [
+  }, [
     location.pathname,
     isUserAdmin,
     shouldProtect,
