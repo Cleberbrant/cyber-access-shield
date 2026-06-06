@@ -22,7 +22,6 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
-  const [errorCode, setErrorCode] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -57,15 +56,12 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
             setStatus("idle");
             onExpire();
           },
-          "error-callback": (code: string) => {
-            setErrorCode(code ?? "cf-err");
+          "error-callback": () => {
             setStatus("error");
             onError();
           },
         });
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setErrorCode(`EX:${msg.slice(0, 60)}`);
+      } catch {
         setStatus("error");
         onError();
       }
@@ -95,7 +91,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
       {status === "error" && (
         <div className="flex items-center gap-2 text-xs text-destructive px-1 mt-1">
           <AlertCircle className="h-3 w-3" />
-          <span>Erro na verificação [{errorCode}]. Recarregue a página.</span>
+          <span>Erro na verificação. Recarregue a página.</span>
         </div>
       )}
     </div>
