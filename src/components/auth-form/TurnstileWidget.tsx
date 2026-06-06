@@ -58,12 +58,14 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
             onExpire();
           },
           "error-callback": (code: string) => {
-            setErrorCode(code ?? "unknown");
+            setErrorCode(code ?? "cf-err");
             setStatus("error");
             onError();
           },
         });
-      } catch {
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorCode(`EX:${msg.slice(0, 60)}`);
         setStatus("error");
         onError();
       }
