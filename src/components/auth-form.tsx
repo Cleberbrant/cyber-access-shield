@@ -9,6 +9,7 @@ import { EmailInput } from "./auth-form/EmailInput";
 import { PasswordInput } from "./auth-form/PasswordInput";
 import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
 import { AuthFormFooter } from "./auth-form/AuthFormFooter";
+import { TurnstileWidget } from "./auth-form/TurnstileWidget";
 import { detectDevTools } from "@/utils/secure-utils";
 
 const loginSchema = z.object({
@@ -45,6 +46,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [resentEmail, setResentEmail] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -251,10 +253,12 @@ export function AuthForm({ type, className }: AuthFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-if (!validateForm()) {
-return;
+    if (!validateForm()) return;
+    if (!turnstileToken) {
+      setErrors({ form: "Confirme que você não é um robô antes de continuar." });
+      return;
     }
-if (type === "login") {
+    if (type === "login") {
       await handleLogin();
     } else {
       await handleRegister();
@@ -310,6 +314,12 @@ if (type === "login") {
               disabled={isLoading}
             />
           )}
+
+          <TurnstileWidget
+            onSuccess={(token) => setTurnstileToken(token)}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+          />
 
           {errors.form && (
             <div className="rounded-md bg-destructive/15 p-3 space-y-2">
