@@ -70,9 +70,10 @@ Gerencia cache de dados do servidor com invalidação automática. Previne que d
 
 | Biblioteca | Versão | Uso |
 |---|---|---|
-| `@marsidev/react-turnstile` | ^0.x | Widget Cloudflare Turnstile anti-bot no login |
 | `zod` | ^3.x | Validação de schemas com inferência de tipos |
 | `react-hook-form` | ^7.x | Formulários sem re-renders desnecessários |
+
+> **Nota**: o widget Cloudflare Turnstile é integrado via API vanilla (`window.turnstile.render()`), sem dependência de wrapper de terceiros — garante controle total sobre o ciclo de vida e evita problemas de inicialização assíncrona.
 
 ---
 
@@ -128,15 +129,20 @@ A aplicação é hospedada na **Vercel** com CDN em 40+ regiões globais. O arqu
 **CSP configurada (produção):**
 ```
 default-src 'self';
-script-src 'self' 'unsafe-inline';
+script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com;
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com;
 img-src 'self' data: https:;
-connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com;
+frame-src 'self' https://challenges.cloudflare.com;
+child-src 'self' https://challenges.cloudflare.com;
+worker-src 'self' blob:;
 frame-ancestors 'none';
 base-uri 'self';
 form-action 'self'
 ```
+
+As entradas `challenges.cloudflare.com` permitem que o widget Turnstile carregue seus scripts e o iframe de verificação. `child-src` é fallback para browsers que não reconhecem `frame-src` separadamente. `worker-src blob:` permite workers internos do Cloudflare.
 
 **Rewrite para SPA:**
 ```json
@@ -149,34 +155,62 @@ form-action 'self'
 
 O **Cloudflare Turnstile** substitui CAPTCHAs tradicionais nos formulários de login e cadastro. Características:
 
-- Verificação invisível (sem "selecione os semáforos")
+- Modo **Managed**: Cloudflare decide automaticamente entre verificação silenciosa ou exibição de checkbox com base no risco de tráfego
 - Sem rastreamento de usuário — compatível com LGPD/GDPR
 - Totalmente gratuito
 - Bloqueia bots automatizados que não renderizam JavaScript
 
+**Configuração no Cloudflare Dashboard:**
+- Widget configurado em: Cloudflare → Turnstile → Widget `0x4AAAAAADf7b3xJLToPr6-r`
+- Hostname autorizado: `cyber-access-shield.vercel.app`
+- Modo: Managed (Recommended)
+
 **Fluxo de verificação:**
 ```
-Usuário preenche formulário
+Usuário acessa /login ou /register
        ↓
-Cloudflare analisa comportamento (JS, timing, mouse)
+Script Cloudflare carrega (index.html <head>)
        ↓
-Token válido → formulário liberado para submissão
+window.turnstile.render() inicializa widget
+       ↓
+Cloudflare analisa comportamento (JS, timing, fingerprint)
+       ↓
+Token gerado → onSuccess(token) → formulário liberado
 Token inválido / expirado → submissão bloqueada
 ```
 
-**Arquitetura do componente:**
+**Implementação via API vanilla (sem wrapper de terceiros):**
 ```typescript
 // src/components/auth-form/TurnstileWidget.tsx
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
+const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
-export function TurnstileWidget({ onSuccess, onExpire, onError }) {
-  return <Turnstile siteKey={SITE_KEY} onSuccess={onSuccess}
-                    onExpire={onExpire} onError={onError}
-                    options={{ theme: "auto", language: "pt-BR" }} />;
-}
+useEffect(() => {
+  function tryRender() {
+    if (!globalThis.turnstile) { setTimeout(tryRender, 100); return; }
+    globalThis.turnstile.render(containerRef.current, {
+      sitekey: SITE_KEY,
+      theme: "auto",
+      callback: (token) => { setStatus("success"); onSuccess(token); },
+      "expired-callback": () => { setStatus("idle"); onExpire(); },
+      "error-callback": () => { setStatus("error"); onError(); },
+    });
+  }
+  tryRender();
+}, []);
 ```
 
+O script é carregado no `<head>` do `index.html` com `id="cf-turnstile-script"` e `?render=explicit` para controle manual do ciclo de vida. A variável de ambiente `VITE_TURNSTILE_SITE_KEY` é configurada no Vercel (Settings → Environment Variables → Production).
+
 O token é armazenado em estado React e verificado antes de qualquer chamada ao Supabase Auth. Ao expirar, o estado é invalidado automaticamente.
+
+**Contas de teste criadas no Supabase (para apresentação do TCC):**
+
+| Perfil | Email |
+|---|---|
+| Professor (Admin) | `professor.teste@cyberaccessshield.com` |
+| Aluno | `aluno.teste@cyberaccessshield.com` |
+
+Ambas têm email pré-confirmado e perfil criado — prontas para uso imediato. As senhas são compartilhadas separadamente (fora do repositório).
 
 ---
 

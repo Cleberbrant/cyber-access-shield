@@ -161,7 +161,7 @@ Headers aplicados pelo Vercel em todas as respostas — reforçam e complementam
 | `X-XSS-Protection` | `1; mode=block` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` |
-| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; ...` |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; child-src 'self' https://challenges.cloudflare.com; worker-src 'self' blob:; ...` |
 
 O HSTS com `preload` e `max-age=63072000` (2 anos) garante que navegadores sempre usem HTTPS, mesmo antes de qualquer requisição.
 
@@ -171,11 +171,10 @@ O HSTS com `preload` e `max-age=63072000` (2 anos) garante que navegadores sempr
 
 ### 7.1 Cloudflare Turnstile (Anti-Bot)
 
-Integrado nos formulários de login e cadastro via `@marsidev/react-turnstile`. Bloqueia a submissão enquanto o token Cloudflare não for gerado:
+Integrado nos formulários de login e cadastro via API vanilla (`window.turnstile.render()`). Bloqueia a submissão enquanto o token Cloudflare não for gerado:
 
 ```typescript
-const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-
+// auth-form.tsx — guard de submissão
 const handleSubmit = async (e) => {
   if (!turnstileToken) {
     setErrors({ form: "Confirme que você não é um robô antes de continuar." });
@@ -185,7 +184,9 @@ const handleSubmit = async (e) => {
 };
 ```
 
-O token expira automaticamente — re-verificação necessária se demorar. Configura-se via `VITE_TURNSTILE_SITE_KEY` no Vercel (Settings → Environment Variables).
+**Decisão técnica**: a integração utiliza `window.turnstile.render()` diretamente, sem wrapper React de terceiros. O script é pré-carregado no `<head>` do `index.html` com `?render=explicit`, garantindo disponibilidade antes do React montar os componentes.
+
+O token expira automaticamente — re-verificação necessária se demorar. A variável `VITE_TURNSTILE_SITE_KEY` é armazenada criptografada no Vercel (Settings → Environment Variables → Production). Qualquer valor incorreto causa erro `Invalid input for parameter "sitekey"` na inicialização do widget.
 
 ### 7.2 Bloqueio de Dispositivos Móveis
 
