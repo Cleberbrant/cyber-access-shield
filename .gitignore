@@ -35,6 +35,10 @@ dist-ssr
 
 # SonarCloud
 .scannerwork/
+.sonarlint/
+
+# AI agent skills (regenerate with: npx skills add supabase/agent-skills)
+.agents/
 
 # Test coverage
 coverage/
