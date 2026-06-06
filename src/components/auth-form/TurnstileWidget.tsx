@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle, AlertCircle } from "lucide-react";
 
 declare global {
-  interface Window {
-    turnstile?: {
-      render: (container: HTMLElement, options: object) => string;
-      remove: (widgetId: string) => void;
-      reset: (widgetId: string) => void;
-    };
-  }
+  // eslint-disable-next-line no-var
+  var turnstile: {
+    render: (container: HTMLElement, options: object) => string;
+    remove: (widgetId: string) => void;
+    reset: (widgetId: string) => void;
+  } | undefined;
 }
 
 const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA";
@@ -23,6 +22,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorCode, setErrorCode] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +32,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
     function tryRender() {
       if (cancelled || !containerRef.current) return;
 
-      if (!window.turnstile) {
+      if (!globalThis.turnstile) {
         if (attempts < maxAttempts) {
           attempts++;
           setTimeout(tryRender, 100);
@@ -46,7 +46,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
       if (widgetIdRef.current) return; // já renderizado
 
       try {
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        widgetIdRef.current = globalThis.turnstile.render(containerRef.current, {
           sitekey: SITE_KEY,
           theme: "auto",
           callback: (token: string) => {
@@ -57,7 +57,8 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
             setStatus("idle");
             onExpire();
           },
-          "error-callback": () => {
+          "error-callback": (code: string) => {
+            setErrorCode(code ?? "unknown");
             setStatus("error");
             onError();
           },
@@ -72,8 +73,8 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
 
     return () => {
       cancelled = true;
-      if (widgetIdRef.current && window.turnstile) {
-        try { window.turnstile.remove(widgetIdRef.current); } catch { /* ignorar */ }
+      if (widgetIdRef.current && globalThis.turnstile) {
+        try { globalThis.turnstile.remove(widgetIdRef.current); } catch { /* ignorar */ }
         widgetIdRef.current = null;
       }
     };
@@ -92,7 +93,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
       {status === "error" && (
         <div className="flex items-center gap-2 text-xs text-destructive px-1 mt-1">
           <AlertCircle className="h-3 w-3" />
-          <span>Erro na verificação. Recarregue a página.</span>
+          <span>Erro na verificação [{errorCode}]. Recarregue a página.</span>
         </div>
       )}
     </div>
