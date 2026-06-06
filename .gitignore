@@ -41,5 +41,8 @@ dist-ssr
 # AI agent skills (regenerate with: npx skills add supabase/agent-skills)
 .agents/
 
+# Vercel CLI cache
+.vercel/
+
 # Test coverage
 coverage/

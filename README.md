@@ -7,6 +7,8 @@ Plataforma de avaliação online segura desenvolvida como Trabalho de Conclusão
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=Cleberbrant_cyber-access-shield&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=Cleberbrant_cyber-access-shield)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Cleberbrant_cyber-access-shield&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Cleberbrant_cyber-access-shield)
 
+**URL de produção**: [https://cyber-access-shield.vercel.app](https://cyber-access-shield.vercel.app)
+
 ---
 
 ## 📋 Índice
@@ -15,12 +17,13 @@ Plataforma de avaliação online segura desenvolvida como Trabalho de Conclusão
 - [Funcionalidades](#-funcionalidades)
 - [Sistema de Defesas Anti-Fraude](#-sistema-de-defesas-anti-fraude)
 - [Tecnologias](#-tecnologias)
-- [Arquitetura](#-arquitetura)
+- [Infraestrutura e Deploy](#-infraestrutura-e-deploy)
 - [Configuração do Ambiente](#-configuração-do-ambiente)
 - [Scripts Disponíveis](#-scripts-disponíveis)
 - [Segurança e SSDLC](#-segurança-e-ssdlc)
 - [CI/CD e Pipelines](#-cicd-e-pipelines)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Documentação](#-documentação)
 - [Autores](#-autores)
 
 ---
@@ -40,13 +43,12 @@ Uma plataforma que integra múltiplas camadas de defesa para criar um ambiente d
 ## ✨ Funcionalidades
 
 ### Para Administradores (Professores)
-- **Criação de avaliações** com questões objetivas e dissertativas
+- **Criação de avaliações** com questões objetivas (múltipla escolha, V/F) e dissertativas
 - **Configuração de parâmetros**: tempo máximo, número de tentativas, data de disponibilização
-- **Correção automática** de questões objetivas
+- **Correção automática** de questões objetivas (gabarito server-side)
 - **Painel de logs de fraude** com detalhes por aluno e por avaliação
 - **Gestão de usuários**: ativação/desativação, reset de senha, alteração de permissões
 - **Dashboard** com estatísticas gerais e métricas de uso
-- **Logs de auditoria** de ações administrativas
 
 ### Para Alunos
 - **Realização de avaliações** em ambiente seguro e protegido
@@ -55,40 +57,29 @@ Uma plataforma que integra múltiplas camadas de defesa para criar um ambiente d
 - **Gestão de perfil** e alteração de senha
 
 ### Segurança da Plataforma
-- **Autenticação** via Supabase Auth (email/senha)
+- **Autenticação** via Supabase Auth (email/senha) com proteção anti-bot (Cloudflare Turnstile)
 - **Autorização baseada em perfis** (admin/aluno) com Row Level Security (RLS)
-- **Senhas temporárias** com geração criptográfica (`crypto.getRandomValues`)
-- **Validação de entrada** e sanitização contra XSS
-- **Headers de segurança** (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)
+- **Bloqueio de dispositivos móveis** — plataforma exclusiva para desktop
+- **Headers de segurança** em produção (CSP, HSTS Preload, X-Frame-Options, etc.)
 
 ---
 
 ## 🔒 Sistema de Defesas Anti-Fraude
 
-O sistema implementa múltiplas camadas de proteção ativadas durante a realização de avaliações:
+O sistema implementa múltiplas camadas de proteção durante as avaliações:
 
-| Proteção | Descrição | Hook Responsável |
-|----------|-----------|-----------------|
-| **Bloqueio de Teclado** | Impede Ctrl+C, Ctrl+V, Ctrl+P, PrintScreen, F12 e outros atalhos | `useKeyboardProtection` |
+| Proteção | Descrição | Hook/Componente |
+|---|---|---|
+| **Bloqueio de Teclado** | Impede Ctrl+C, Ctrl+V, Ctrl+P, PrintScreen, F12 | `useKeyboardProtection` |
 | **Bloqueio de Mouse** | Desabilita clique direito e menu de contexto | `useMouseProtection` |
-| **Detecção de Blur/Focus** | Registra quando aluno sai da janela da avaliação (troca de aba/app) | `useWindowBlurProtection` |
-| **Popup de Saída** | Alerta "beforeunload" ao tentar fechar/navegar durante avaliação | `useBeforeUnloadProtection` |
-| **Prevenção de Captura** | Desabilita seleção de texto e cópia visual | `preventScreenCapture` |
-| **Detecção de DevTools** | Identifica abertura de ferramentas de desenvolvedor | `detectDevTools` |
-| **Registro de Eventos** | Todos os eventos de segurança são logados no banco de dados | `logSecurityEvent` |
-
-### Regras de Ativação
-- **Alunos**: Proteções de teclado/mouse ativas em todo o sistema autenticado
-- **Administradores**: Sem proteções (para facilitar administração)
-- **Detecção de blur/focus**: Ativa apenas durante avaliação em andamento
-- **Popup de saída**: Ativa apenas dentro da rota `/assessment/:id`
-
-### Painel de Logs de Fraude
-Os administradores podem visualizar:
-- Tipo de evento (cópia, troca de aba, DevTools, etc.)
-- Severidade do evento (crítico, médio, baixo)
-- Timestamp e IP mascarado do aluno
-- Histórico por avaliação e por sessão
+| **Detecção de Blur/Focus** | Registra troca de aba/janela durante avaliação | `useWindowBlurProtection` |
+| **Popup de Saída** | Alerta `beforeunload` ao tentar fechar | `useBeforeUnloadProtection` |
+| **Detecção de DevTools** | Threshold 129px + detecção Firebug | `useDevToolsDetection` |
+| **Bloqueio Pre-React** | Atalhos críticos bloqueados antes do React montar (script inline) | `index.html` |
+| **Gabarito Server-Side** | `correct_answer` nunca enviada ao frontend — correção via RPC | `submit_and_grade_assessment` |
+| **Anti-Bot no Login** | Cloudflare Turnstile bloqueia bots automatizados | `TurnstileWidget` |
+| **Bloqueio Mobile** | Dispositivos móveis redirecionados para tela de aviso | `MobileBlock` |
+| **Registro de Eventos** | Todos os eventos de segurança logados no banco | `logSecurityEvent` |
 
 ---
 
@@ -96,164 +87,164 @@ Os administradores podem visualizar:
 
 ### Frontend
 | Tecnologia | Uso |
-|-----------|-----|
-| **React 18** | Framework de UI |
-| **TypeScript** | Tipagem estática |
-| **Vite** | Build tool e dev server |
-| **Tailwind CSS** | Estilização |
-| **shadcn/ui** | Componentes de UI (Radix UI) |
-| **React Router** | Roteamento SPA |
-| **React Hook Form + Zod** | Formulários com validação |
-| **Recharts** | Gráficos no dashboard |
-| **TanStack Query** | Cache e gerenciamento de estado servidor |
+|---|---|
+| **React 18** | Framework de UI com hooks |
+| **TypeScript** | Tipagem estática (target ES2021) |
+| **Vite** | Build tool + dev server |
+| **Tailwind CSS** | Estilização utility-first |
+| **shadcn/ui** | Componentes acessíveis (Radix UI) |
+| **React Router v6** | Roteamento SPA protegido |
+| **React Hook Form + Zod** | Formulários com validação de schema |
+| **TanStack Query** | Cache e sincronização de dados servidor |
+| **@marsidev/react-turnstile** | Cloudflare Turnstile anti-bot |
 
 ### Backend (Supabase)
 | Serviço | Uso |
-|---------|-----|
-| **Supabase Auth** | Autenticação de usuários |
-| **Supabase Database** | PostgreSQL com Row Level Security |
-| **Supabase RPC** | Funções server-side para operações seguras |
-| **Row Level Security (RLS)** | Políticas de acesso por perfil |
+|---|---|
+| **Supabase Auth** | Autenticação JWT |
+| **PostgreSQL + RLS** | Banco com políticas de acesso por linha |
+| **Supabase RPC** | Funções server-side (correção, logs, gestão) |
 
-### DevOps / Segurança
+### Infraestrutura
 | Ferramenta | Uso |
-|-----------|-----|
-| **GitHub Actions** | CI/CD (lint, build, testes, auditoria) |
-| **SonarCloud** | Análise estática de código (segurança, confiabilidade, manutenibilidade) |
-| **Vitest + coverage-v8** | Testes unitários com cobertura |
-| **ESLint + Security Plugins** | Linting com regras de segurança |
+|---|---|
+| **Vercel** | Hospedagem com CDN global + security headers |
+| **Cloudflare Turnstile** | Proteção anti-bot no login/cadastro (gratuito) |
+| **GitHub Actions** | CI/CD (3 pipelines) |
+| **SonarCloud** | SAST — análise estática de segurança |
+| **Dependabot** | Monitoramento de vulnerabilidades em dependências |
 
 ---
 
 ## 🏗️ Arquitetura
 
 ```
-┌─────────────────────────────────────────────┐
-│                   Frontend                   │
-│            React + TypeScript + Vite         │
-├─────────────┬───────────────┬───────────────┤
-│   Pages     │  Components   │    Hooks      │
-│  (rotas)    │   (shadcn)    │ (proteções)   │
-├─────────────┴───────────────┴───────────────┤
-│              Utils / Lib                     │
-│   (validação, formatação, segurança)         │
-├─────────────────────────────────────────────┤
-│           Supabase Client SDK               │
-└────────────────────┬────────────────────────┘
-                     │ HTTPS
-┌────────────────────┴────────────────────────┐
-│              Supabase (Backend)              │
-├──────────┬──────────┬───────────────────────┤
-│   Auth   │   RLS    │     PostgreSQL        │
-│ (login)  │(policies)│ (dados + RPC funcs)   │
-└──────────┴──────────┴───────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                      USUÁRIO (Browser)                       │
+│  Cloudflare Turnstile  ←→  Formulários de Login/Cadastro    │
+│  MobileBlock Guard     ←→  Aplicação React                  │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTPS (HSTS Preload 2 anos)
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    VERCEL (CDN Global)                       │
+│  Security Headers (CSP, HSTS, X-Frame-Options, ...)         │
+│  Rewrite SPA · Cache imutável para assets                   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ HTTPS (TLS 1.3)
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│               SUPABASE (Backend-as-a-Service)                │
+│  Auth (JWT) · PostgreSQL · RLS (38 políticas)               │
+│  RPC (gabarito server-side) · Realtime WebSocket            │
+└─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚀 Infraestrutura e Deploy
+
+### Vercel
+
+A aplicação é hospedada na Vercel com CDN global. Headers de segurança configurados via `vercel.json`:
+
+- **HSTS Preload** — `max-age=63072000` (2 anos) força HTTPS
+- **CSP** — restringe scripts, estilos e conexões às origens permitidas
+- **X-Frame-Options: DENY** — bloqueia clickjacking
+- **Permissions-Policy** — desabilita câmera, microfone, geolocalização, pagamento
+- **Cache imutável** — assets versionados cacheados por 1 ano
+
+### Cloudflare Turnstile
+
+Integrado nos formulários de login/cadastro. Bloqueia bots automatizados antes que cheguem ao Supabase Auth. Totalmente gratuito e compatível com LGPD (sem rastreamento).
+
+Para ativar com sitekey real:
+1. Acesse [dash.cloudflare.com](https://dash.cloudflare.com) → **Turnstile → Add site**
+2. Informe o domínio `cyber-access-shield.vercel.app`
+3. Copie a **Site Key**
+4. No Vercel: **Settings → Environment Variables → `VITE_TURNSTILE_SITE_KEY`**
 
 ---
 
 ## ⚙️ Configuração do Ambiente
 
 ### Pré-requisitos
-- **Node.js** ≥ 18.x ([instalar com nvm](https://github.com/nvm-sh/nvm))
+- **Node.js** ≥ 18.x
 - **npm** ≥ 9.x
 - **Git**
-- Conta no **Supabase** (para o backend)
 
 ### Instalação
 
 ```bash
-# 1. Clone o repositório
 git clone https://github.com/Cleberbrant/cyber-access-shield.git
-
-# 2. Acesse o diretório
 cd cyber-access-shield
-
-# 3. Instale as dependências
 npm install
-
-# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-O servidor de desenvolvimento estará disponível em `http://localhost:8080`.
+O servidor estará em `http://localhost:8080`.
 
 ### Variáveis de Ambiente
 
-Crie um arquivo `.env.local` na raiz do projeto:
+Crie `.env.local` na raiz (veja `.env.example`):
 
 ```env
-VITE_SUPABASE_URL=https://seu-projeto.supabase.co
-VITE_SUPABASE_ANON_KEY=sua-chave-anon-aqui
+# Cloudflare Turnstile — obtenha em dash.cloudflare.com → Turnstile
+# Chave de teste (sempre passa): 1x00000000000000000000AA
+VITE_TURNSTILE_SITE_KEY=sua_sitekey_aqui
 ```
 
-> ⚠️ As variáveis de ambiente **com prefixo `VITE_`** são expostas ao cliente. Nunca inclua chaves de serviço (`service_role`) no frontend.
+> As credenciais do Supabase estão hardcoded em `src/integrations/supabase/client.ts` (chave pública `anon` — prática padrão).
 
 ---
 
 ## 📦 Scripts Disponíveis
 
 | Script | Comando | Descrição |
-|--------|---------|-----------|
-| **dev** | `npm run dev` | Servidor de desenvolvimento com hot-reload |
-| **build** | `npm run build` | Build de produção otimizado |
-| **preview** | `npm run preview` | Preview local do build de produção |
-| **lint** | `npm run lint` | ESLint com regras de segurança |
-| **test** | `npm run test` | Executa testes unitários (Vitest) |
-| **test:coverage** | `npm run test:coverage` | Testes com relatório de cobertura (lcov) |
+|---|---|---|
+| **dev** | `npm run dev` | Dev server com HMR (porta 8080) |
+| **build** | `npm run build` | Build de produção |
+| **preview** | `npm run preview` | Preview local do build |
+| **lint** | `npm run lint` | ESLint com plugins de segurança |
+| **test** | `npm run test` | Testes unitários (Vitest) |
+| **test:coverage** | `npm run test:coverage` | Testes + relatório de cobertura LCOV |
 
 ---
 
 ## 🔐 Segurança e SSDLC
 
-O projeto segue princípios do **SAMM (Software Assurance Maturity Model)** para desenvolvimento seguro:
-
-### Análise Estática (SonarCloud)
-- **Integração contínua** via GitHub Actions
-- **Quality Gate** obrigatório com padrão "Sonar way"
-- Monitoramento de: segurança, confiabilidade, manutenibilidade, cobertura de testes
-- **Security Hotspots** revisados e corrigidos
+### Análise Estática — SonarCloud
+- Quality Gate "Sonar way" obrigatório (Security A, Reliability A, Maintainability A)
+- Security Hotspots 100% revisados
+- Integrado ao CI via `SONAR_TOKEN` secret no GitHub
 
 ### ESLint com Plugins de Segurança
 ```
-eslint-plugin-security     — Detecção de padrões inseguros (eval, regex DoS, etc.)
-eslint-plugin-no-secrets   — Prevenção de secrets hardcoded no código
+eslint-plugin-security     — padrões inseguros (eval, regex DoS, timing attacks)
+eslint-plugin-no-secrets   — prevenção de secrets hardcoded
 ```
 
-### Headers de Segurança
-Configurados via `index.html` e `vite.config.ts`:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-
 ### Boas Práticas Implementadas
-- ✅ Geração de senhas com `crypto.getRandomValues()` (não `Math.random()`)
-- ✅ Regex segura contra ReDoS
-- ✅ Sanitização de entradas contra XSS
-- ✅ Comparações NULL-safe com `COALESCE` no SQL
-- ✅ `Number.parseInt()` / `Number.isNaN()` (padrão ES2021+)
-- ✅ GitHub Actions pinned por SHA (supply chain security)
-- ✅ Row Level Security (RLS) em todas as tabelas do Supabase
+- ✅ `crypto.getRandomValues()` para geração de senhas (não `Math.random()`)
+- ✅ Regex sem ReDoS
+- ✅ `sanitizeInput()` via DOM textContent
+- ✅ `Number.parseInt()` / `Number.isNaN()` (ES2021)
+- ✅ SHA pinning em todas as GitHub Actions
+- ✅ RLS em 7 tabelas (38 políticas)
+- ✅ Gabarito server-side — `correct_answer` nunca exposta ao cliente
+- ✅ Admin sempre verificado via Supabase (nunca localStorage)
+- ✅ `console.*` removidos em produção via `esbuild.drop`
+- ✅ Source maps desabilitados em produção
 
 ---
 
-## 🚀 CI/CD e Pipelines
+## 🚦 CI/CD e Pipelines
 
-Três pipelines automatizadas rodam via GitHub Actions:
-
-### 1. CI — Lint & Build (`ci.yml`)
-- ✅ ESLint (com continue-on-error para regras de segurança)
-- ✅ Testes unitários com cobertura
-- ✅ TypeScript type check
-- ✅ Build de produção
-
-### 2. Security — SonarCloud Analysis (`sonarcloud.yml`)
-- ✅ Testes com cobertura (gera `lcov.info`)
-- ✅ SonarCloud scan com relatório de cobertura
-- Triggers: push no `main`, PRs para `main`
-
-### 3. Security — Dependency Audit (`dependency-audit.yml`)
-- ✅ `npm audit` para verificar vulnerabilidades em dependências
-- Triggers: semanal + push/PRs
+| Pipeline | Arquivo | Trigger | Etapas |
+|---|---|---|---|
+| **CI — Lint & Build** | `ci.yml` | Push `main`/`develop`, PRs | ESLint → Testes → TypeCheck → Build |
+| **SonarCloud Analysis** | `sonarcloud.yml` | Push `main`, PRs | Testes → Cobertura → SAST |
+| **Dependency Audit** | `dependency-audit.yml` | Semanal + push/PRs | `npm audit --audit-level=high` |
 
 ---
 
@@ -262,45 +253,45 @@ Três pipelines automatizadas rodam via GitHub Actions:
 ```
 cyber-access-shield/
 ├── .github/workflows/          # Pipelines CI/CD
-│   ├── ci.yml                  # Lint, testes, build
-│   ├── sonarcloud.yml          # Análise estática SonarCloud
-│   └── dependency-audit.yml    # Auditoria de dependências
+├── docs/                       # Relatórios do TCC
+│   ├── relatorio_tecnologias.md
+│   └── relatorio_seguranca_infraestrutura.md
+├── public/
+│   ├── favicon.svg             # Ícone da aplicação (escudo)
+│   └── robots.txt
 ├── src/
-│   ├── components/             # Componentes React (shadcn/ui + custom)
-│   │   ├── assessment/         # Componentes de avaliação
-│   │   └── ui/                 # Componentes base (shadcn)
-│   ├── hooks/                  # Custom hooks
-│   │   ├── useAssessmentProtection.ts   # Hook central de proteções
-│   │   ├── useKeyboardProtection.ts     # Bloqueio de atalhos
-│   │   ├── useMouseProtection.ts        # Bloqueio de mouse
-│   │   ├── useWindowBlurProtection.ts   # Detecção de troca de janela
-│   │   └── ...                 # Outros hooks (timer, submission, etc.)
-│   ├── integrations/           # Configuração Supabase
-│   ├── lib/                    # Utilitários base (cn)
+│   ├── components/
+│   │   ├── auth-form/
+│   │   │   └── TurnstileWidget.tsx   # Cloudflare Turnstile
+│   │   ├── MobileBlock.tsx           # Bloqueio de dispositivos móveis
+│   │   └── ui/                       # shadcn/ui
+│   ├── hooks/                  # Anti-fraude hooks
+│   │   ├── useAssessmentProtection.ts
+│   │   ├── useKeyboardProtection.ts
+│   │   ├── useMouseProtection.ts
+│   │   ├── useWindowBlurProtection.ts
+│   │   └── useDevToolsDetection.ts
 │   ├── pages/                  # Páginas da aplicação
-│   │   ├── LandingPage.tsx     # Página inicial pública
-│   │   ├── LoginPage.tsx       # Login
-│   │   ├── Dashboard.tsx       # Dashboard (admin/aluno)
-│   │   ├── CreateAssessmentPage.tsx  # Criação de avaliações
-│   │   ├── AssessmentPage.tsx  # Realização de avaliação (protegida)
-│   │   ├── AssessmentResultPage.tsx  # Resultados
-│   │   ├── FraudLogsPage.tsx   # Painel de logs de fraude
-│   │   └── UserManagementPage.tsx    # Gestão de usuários
-│   ├── types/                  # Definições TypeScript
-│   └── utils/                  # Funções utilitárias
-│       ├── secure-utils.ts     # Funções de segurança
-│       ├── user-utils.ts       # Gestão de usuários
-│       ├── fraud-logs-utils.ts # Formatação de logs
-│       ├── assessment-availability.ts  # Disponibilidade
-│       ├── session-progress.ts # Progresso de sessão
-│       └── __tests__/          # Testes unitários
-├── supabase/sql/               # Scripts SQL (RLS, funções RPC)
+│   ├── integrations/supabase/  # Client e tipos do Supabase
+│   └── utils/                  # Funções de segurança e utilidades
+├── supabase/sql/               # Migrations SQL (RLS, funções RPC)
+├── .env.example                # Variáveis de ambiente documentadas
+├── vercel.json                 # Configuração de deploy e security headers
 ├── sonar-project.properties    # Configuração SonarCloud
-├── vitest.config.ts            # Configuração de testes
-├── eslint.config.js            # ESLint com plugins de segurança
-├── vite.config.ts              # Configuração Vite + headers
-└── tsconfig.app.json           # TypeScript (target ES2021)
+├── vite.config.ts              # Build + headers de desenvolvimento
+└── eslint.config.js            # ESLint com plugins de segurança
 ```
+
+---
+
+## 📚 Documentação
+
+Os relatórios do TCC estão na pasta [`docs/`](docs/):
+
+| Documento | Conteúdo |
+|---|---|
+| [`relatorio_tecnologias.md`](docs/relatorio_tecnologias.md) | Stack, arquitetura, componentes, mapeamento OWASP, justificativas técnicas |
+| [`relatorio_seguranca_infraestrutura.md`](docs/relatorio_seguranca_infraestrutura.md) | SAST, SCA, CI/CD, headers HTTP, proteções, resultados, SAMM |
 
 ---
 
