@@ -9,6 +9,9 @@ import {
 } from "@/types/fraud-logs";
 import { useToast } from "@/hooks/use-toast";
 
+// Eventos informativos que não representam tentativas de fraude
+const INFORMATIONAL_EVENTS = ["assessment_started", "window_focus"];
+
 export function useFraudLogs(filters?: FraudLogsFilters) {
   const [logs, setLogs] = useState<FraudLog[]>([]);
   const [assessmentLogs, setAssessmentLogs] = useState<AssessmentLogs[]>([]);
@@ -116,7 +119,9 @@ if (!data || data.length === 0) return null;
 
         const student = studentMap.get(key)!;
         student.logs.push(log);
-        student.total_violations++;
+        if (!INFORMATIONAL_EVENTS.includes(log.event_type)) {
+          student.total_violations++;
+        }
       }
 
       const assessmentData = data[0];
@@ -131,7 +136,9 @@ if (!data || data.length === 0) return null;
         assessment_title: assessmentData?.assessment_title || "Avaliação",
         students: Array.from(studentMap.values()),
         total_students_with_logs: uniqueStudentIds.size,
-        total_violations: data.length,
+        total_violations: data.filter(
+          (log: FraudLog) => !INFORMATIONAL_EVENTS.includes(log.event_type)
+        ).length,
       };
     } catch (error) {
       return null;

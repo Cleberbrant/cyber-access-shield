@@ -69,8 +69,9 @@ export function useAssessmentSubmission(
       // Limpar flag de avaliação em andamento
       localStorage.removeItem("assessmentInProgress");
 
-      // Navegar para a página de resultados
-      navigate(`/assessment-result/${assessmentId}`);
+      // Navegar para a página de resultados substituindo a entrada no histórico
+      // para impedir que o botão Voltar retorne à avaliação concluída
+      navigate(`/assessment-result/${assessmentId}`, { replace: true });
 
       toast({
         title: "Avaliação concluída",

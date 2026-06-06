@@ -146,6 +146,19 @@ export function useAssessmentLoader(
 
         // Verificar sessão existente ou criar nova
         if (existingSessionId) {
+          // Verificar se a sessão já foi concluída — impede re-entrar via botão Voltar
+          const { data: sessionCheck } = await supabase
+            .from("assessment_sessions")
+            .select("is_completed")
+            .eq("id", existingSessionId)
+            .single();
+
+          if (sessionCheck?.is_completed) {
+            localStorage.removeItem("assessmentInProgress");
+            navigate(`/assessment-result/${assessmentId}`, { replace: true });
+            return;
+          }
+
           // Usar a sessão fornecida na URL
           setSessionId(existingSessionId);
 
