@@ -2,7 +2,7 @@ name: CI — Lint & Build
 
 on:
   push:
-    branches: ['*']
+    branches: [main, develop]
   pull_request:
     branches: [main]
 

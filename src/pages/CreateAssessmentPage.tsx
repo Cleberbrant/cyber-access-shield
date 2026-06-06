@@ -150,7 +150,7 @@ export default function CreateAssessmentPage() {
                   q.correct_answer !== null ? Number.parseInt(q.correct_answer) : 0;
               }
             } else if (q.question_type === "true_false") {
-              question.correctAnswer = q.correct_answer === "true";
+              question.correctAnswer = q.correct_answer === "true" ? true : false;
             } else if (q.question_type === "text") {
               question.correctAnswer = q.correct_answer || "";
             } else if (q.question_type === "code" && q.options) {
@@ -431,7 +431,7 @@ export default function CreateAssessmentPage() {
           questionData.correct_answer = q.correctAnswer?.toString();
         } else if (q.type === "true_false") {
           questionData.correct_answer =
-            q.correctAnswer === true ? "true" : "false";
+            q.correctAnswer ? "true" : "false";
         } else if (q.type === "text") {
           questionData.correct_answer = q.correctAnswer as string;
         } else if (q.type === "code") {
@@ -560,7 +560,7 @@ export default function CreateAssessmentPage() {
               <Label>Resposta correta:</Label>
               <RadioGroup
                 value={
-                  currentQuestion.correctAnswer === true ? "true" : "false"
+                  currentQuestion.correctAnswer ? "true" : "false"
                 }
                 onValueChange={(value) => {
                   setCurrentQuestion({
@@ -1036,7 +1036,7 @@ export default function CreateAssessmentPage() {
                                   <div className="mt-2 flex items-center gap-2 text-sm">
                                     <span>Resposta correta:</span>
                                     <span className="font-medium">
-                                      {question.correctAnswer === true
+                                      {question.correctAnswer
                                         ? "Verdadeiro"
                                         : "Falso"}
                                     </span>

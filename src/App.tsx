@@ -16,6 +16,7 @@ import UserManagementPage from "./pages/UserManagementPage";
 import NotFound from "./pages/NotFound";
 import { useDevToolsDetection } from "./hooks/useDevToolsDetection";
 import { DevToolsWarning } from "./components/DevToolsWarning";
+import { MobileBlock } from "./components/MobileBlock";
 import { logSecurityEvent, SecurityEventType } from "./utils/secure-utils";
 import { supabase } from "./integrations/supabase/client";
 
@@ -108,15 +109,17 @@ function AppRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <MobileBlock>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </MobileBlock>
 );
 
 export default App;
