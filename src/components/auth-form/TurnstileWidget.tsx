@@ -20,6 +20,7 @@ export function TurnstileWidget({ onSuccess, onExpire, onError }: TurnstileWidge
         onSuccess={(token) => { setStatus("success"); onSuccess(token); }}
         onExpire={() => { setStatus("idle"); onExpire(); }}
         onError={() => { setStatus("error"); onError(); }}
+        injectScript={false}
         options={{ theme: "auto" }}
       />
       {status === "success" && (
