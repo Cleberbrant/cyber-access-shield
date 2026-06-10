@@ -247,15 +247,57 @@ Todos foram removidos. A CSP agora proíbe qualquer script externo além do pró
 
 ---
 
-## 8. Banco de Dados — Segurança
+## 8. Versão Desktop (Electron) — Hardening e Kiosk Anti-Fraude
 
-### 8.1 Row Level Security (RLS)
+A migração para Electron (executável portátil Windows) adiciona uma camada de segurança **no nível do sistema operacional**, inalcançável pela versão web. O frontend, o backend e as políticas RLS são os mesmos — o desktop muda apenas o "contêiner" da aplicação. Detalhamento completo da arquitetura no Relatório Tecnológico (seção 7); aqui, o resumo do que importa para segurança.
+
+### 8.1 Hardening do Processo
+
+Electron mal configurado expõe Node.js à página (RCE). Configuração adotada segue o checklist oficial de segurança do Electron:
+
+| Controle | Estado |
+|---|---|
+| `contextIsolation: true` / `nodeIntegration: false` / `sandbox: true` | Renderer 100% isolado de APIs Node |
+| DevTools | Desabilitado no binário de produção |
+| Preload (`contextBridge`) | API mínima: 5 funções, canais IPC fixos, sem passthrough |
+| IPC | Todo handler valida `senderFrame` antes de executar (`isTrustedFrame`) |
+| Protocolo `app://bundle` | Guard contra path traversal + CSP/`X-Frame-Options`/`nosniff` injetados em todo HTML |
+| Instância única | `requestSingleInstanceLock` — impossível rodar duas cópias simultâneas |
+| Navegação externa | Bloqueada (`setupWindowSecurity`) — apenas origem do bundle e dev server |
+
+### 8.2 Kiosk Durante a Prova
+
+| Proteção | Mecanismo |
+|---|---|
+| Tela cheia inescapável | `setKiosk(true)` + `alwaysOnTop("screen-saver")` + fechamento bloqueado (`close`/`before-quit` prevenidos) |
+| Captura de tela | `setContentProtection(true)` — PrintScreen, gravadores e compartilhamento capturam **tela preta** (compositor do Windows) |
+| Monitores secundários | Overlays pretos em tela cheia sobre cada display extra; recriados se um monitor for plugado/removido durante a prova (evento `DISPLAY_CHANGE` registrado) |
+| Atalhos | `globalShortcut` (PrintScreen, Ctrl+P, F12, Ctrl+Shift+I/J/C, Ctrl+U/R/W, F5, F11, Alt+F4) + backup `before-input-event` |
+| Desvio de foco (Alt+Tab) | Refocus automático em milissegundos + evento `WINDOW_BLUR_ELECTRON` → **violação contada na hora** (throttle 4 s, carência 1,5 s na entrada do kiosk), integrada ao sistema de 3 avisos existente |
+
+**Auditoria preservada**: todos os eventos do desktop são registrados pela RPC `insert_security_log` já existente — nenhuma alteração de schema, tabela ou política RLS foi necessária.
+
+### 8.3 Turnstile no Desktop
+
+Turnstile exige hostname web autorizado — inviável em app local (`app://bundle`). Dispensado no Electron e em desenvolvimento; **obrigatório no deploy web** (inalterado). O vetor mitigado pelo Turnstile (bots em formulário público na internet) não se aplica a um executável distribuído de forma controlada.
+
+### 8.4 Limitações Honestas
+
+- `Ctrl+Alt+Del`, combos com tecla Win e o ato do Alt+Tab em si não são bloqueáveis sem hook nativo de teclado ou Windows Assigned Access — mitigados por refocus imediato + violação instantânea + 3 avisos.
+- Máquina virtual e segundo dispositivo físico (celular fotografando) estão fora do alcance de qualquer software de proctoring.
+- Executável sem assinatura de código pode disparar heurísticas de ML em antivírus (ex.: `Suspicious.low.ml.score` no VirusTotal) e SmartScreen — falso positivo típico de binário novo sem reputação; resolve-se com certificado de code signing (trabalho futuro).
+
+---
+
+## 9. Banco de Dados — Segurança
+
+### 9.1 Row Level Security (RLS)
 
 7 tabelas com RLS habilitado + 38 políticas por perfil. Funções `SECURITY DEFINER` executam com privilégios elevados apenas quando necessário, sem expor permissões ao chamador.
 
 Views administrativas (`security_report`, `user_management_view`) configuradas com `security_barrier = true` e acesso `anon` revogado.
 
-### 8.2 Geração de Senhas Temporárias
+### 9.2 Geração de Senhas Temporárias
 
 ```typescript
 // Usa CSPRNG — nunca Math.random()
@@ -266,7 +308,7 @@ function generateTempPassword(): string {
 }
 ```
 
-### 8.3 Sanitização de Entradas
+### 9.3 Sanitização de Entradas
 
 ```typescript
 function sanitizeInput(input: string): string {
@@ -278,7 +320,7 @@ function sanitizeInput(input: string): string {
 
 ---
 
-## 9. Conformidade OWASP SAMM
+## 10. Conformidade OWASP SAMM
 
 | Prática SAMM | Nível | Implementação |
 |---|---|---|
@@ -291,7 +333,7 @@ function sanitizeInput(input: string): string {
 
 ---
 
-## 10. Resultados
+## 11. Resultados
 
 | Métrica | Antes | Depois |
 |---|---|---|
@@ -304,12 +346,17 @@ function sanitizeInput(input: string): string {
 | Gabarito exposto no frontend | Sim | **Não** (RPC server-side) |
 | Admin bypass via localStorage | Sim | **Não** (Supabase server-side) |
 | Scripts externos não auditados | 1 (gptengineer.js) | **0** |
-| Proteção anti-bot no login | Nenhuma | **Cloudflare Turnstile** |
+| Proteção anti-bot no login | Nenhuma | **Cloudflare Turnstile** (web) |
 | Acesso mobile | Permitido | **Bloqueado** (MobileBlock) |
+| Captura de tela durante a prova | Tecla bloqueada (gravador externo passava) | **Tela preta** no desktop (content protection) |
+| Segundo monitor durante a prova | Totalmente livre | **Bloqueado** no desktop (overlays) |
+| Alt+Tab durante a prova | Detectado após 5 s | **Refocus imediato + violação instantânea** no desktop |
+| DevTools durante a prova | Detecção heurística | **Inexistente** no desktop (desabilitado no binário) |
+| Fechar/abandonar a prova | Apenas confirmação do browser | **Bloqueado** no desktop durante a prova |
 
 ---
 
-## 11. Limitações e Trabalhos Futuros
+## 12. Limitações e Trabalhos Futuros
 
 1. **Verificação server-side do Turnstile**: Edge Function no Supabase validando o token via `https://challenges.cloudflare.com/turnstile/v0/siteverify`.
 2. **WAF Cloudflare**: ativado ao adquirir domínio próprio — rate limiting, geo-bloqueio, regras OWASP.
@@ -317,3 +364,5 @@ function sanitizeInput(input: string): string {
 4. **MFA**: disponível no Supabase mas não habilitado.
 5. **Leaked Password Protection**: verificação HaveIBeenPwned disponível no Supabase mas não habilitada.
 6. **Pentest formal**: não realizado — recomendado antes de deploy em produção institucional.
+7. **Assinatura de código do `.exe` desktop**: elimina alertas SmartScreen/heurísticas de antivírus.
+8. **Windows Assigned Access / hook nativo de teclado**: único caminho para bloquear Ctrl+Alt+Del e combos Win — avaliado como fora do escopo do TCC.

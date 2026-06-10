@@ -7,10 +7,15 @@ Data: Junho de 2026
 
 ## 1. Contextualização do Projeto
 
-O **Cyber Access Shield** é uma plataforma web de avaliações acadêmicas com foco em segurança, desenvolvida como Trabalho de Conclusão de Curso (TCC). O sistema abrange dois eixos:
+O **Cyber Access Shield** é uma plataforma de avaliações acadêmicas com foco em segurança, desenvolvida como Trabalho de Conclusão de Curso (TCC). O sistema abrange dois eixos:
 
 - **Segurança no ambiente avaliativo**: proteção contra fraudes durante a realização de provas (cópia, troca de aba, DevTools, captura de tela).
 - **Segurança da plataforma**: conformidade com OWASP Top 10, controle de acesso, testes automatizados e SAST contínuo.
+
+O sistema é entregue em **duas modalidades** com a mesma base de código:
+
+- **Web (Vercel)**: acesso via navegador, com a camada completa de proteções possíveis no browser.
+- **Desktop (Electron)**: executável portátil para Windows que assume o controle do sistema operacional durante a prova (modo kiosk, bloqueio de monitores secundários, bloqueio de captura de tela) — eliminando vetores de fraude que nenhuma aplicação web consegue alcançar (ver seção 7).
 
 **URL de produção**: [https://cyber-access-shield.vercel.app](https://cyber-access-shield.vercel.app)
 
@@ -37,6 +42,8 @@ O **Cyber Access Shield** é uma plataforma web de avaliações acadêmicas com 
 │  PostgreSQL · Auth · RLS · PostgREST · RPC · Realtime        │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+> Na **modalidade desktop**, as duas primeiras camadas são substituídas pelo Electron: o mesmo bundle React é servido localmente por um protocolo próprio (`app://bundle`) e conversa direto com o Supabase via HTTPS. Detalhes na seção 7.
 
 ---
 
@@ -249,9 +256,124 @@ A coluna `correct_answer` nunca é enviada ao frontend. A RPC `submit_and_grade_
 
 ---
 
-## 7. Qualidade e Testes
+## 7. Versão Desktop — Electron
 
-### 7.1 Testes Unitários (Vitest)
+### 7.1 Motivação
+
+A versão web, mesmo com toda a camada de proteção implementada, opera dentro dos limites do navegador. Há vetores de fraude que **nenhuma aplicação web pode controlar**, por restrição de design dos próprios browsers:
+
+| Vetor | Por que o browser não resolve |
+|---|---|
+| Segundo monitor | O browser não enxerga nem controla outros displays |
+| Alt+Tab para outro aplicativo | Detectável (blur), mas não bloqueável nem revertível |
+| PrintScreen / gravadores de tela | A página não pode impedir captura no nível do SO |
+| Fechar a aba / abrir outra janela | `beforeunload` apenas exibe confirmação |
+| Extensões do navegador | Executam com privilégios acima da página |
+
+A migração para **Electron** resolve exatamente essa classe de problemas: o aplicativo passa a ter um processo nativo (Node.js) com acesso às APIs do sistema operacional, mantendo o mesmo frontend React no processo de renderização.
+
+### 7.2 Processo de Migração
+
+A decisão central foi **reaproveitar 100% da base de código web** — nenhum fork, nenhuma duplicação de telas ou lógica:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  MAIN PROCESS (Node.js) — electron/main.ts                   │
+│  Janela · Kiosk · Atalhos globais · Overlays · Protocolo     │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ IPC (canais fixos, sender validado)
+                           ↓ contextBridge (preload sandboxed)
+┌──────────────────────────────────────────────────────────────┐
+│  RENDERER (Chromium sandboxed) — a MESMA SPA React do web    │
+│  Detecção em runtime: isElectron() ativa comportamentos      │
+│  desktop (kiosk, contagem imediata de violação, etc.)        │
+└──────────────────────────┬───────────────────────────────────┘
+                           │ HTTPS
+                           ↓
+                    SUPABASE (inalterado)
+```
+
+**Pipeline de build:**
+
+1. `vite build` → `dist/` (o mesmo bundle do deploy web, com Turnstile removido do HTML por script de build);
+2. esbuild compila `electron/*.ts` → `dist-electron/` (main + preload);
+3. `electron-builder` com target `portable` → **um único `.exe` x64 (~93 MB), sem instalação** — basta enviar o arquivo ao aluno.
+
+**Protocolo `app://bundle`:** em produção o bundle não é servido via `file://` (que quebraria o `BrowserRouter`, os paths absolutos `/assets/...` e o `localStorage` da sessão Supabase, pois `file://` não tem origem). Um protocolo privilegiado próprio (`standard` + `secure`) serve `dist/` com **fallback SPA** — o equivalente desktop dos rewrites da Vercel — e injeta os headers de segurança (CSP, `X-Frame-Options`, `nosniff`) em cada resposta HTML, além de bloquear path traversal.
+
+**Zero mudança no backend:** o desktop usa as mesmas tabelas, RPCs e políticas RLS. Os novos eventos de segurança são registrados pela RPC `insert_security_log` já existente.
+
+### 7.3 Hardening do Processo Electron
+
+Electron mal configurado é um vetor clássico de RCE (Node exposto à página). A configuração segue as recomendações oficiais de segurança do Electron:
+
+| Configuração | Valor | Efeito |
+|---|---|---|
+| `contextIsolation` | `true` | Renderer não acessa internals do Electron |
+| `nodeIntegration` | `false` | Página não tem acesso a APIs Node.js |
+| `sandbox` | `true` | Renderer roda no sandbox do Chromium |
+| `devTools` | `false` em produção | DevTools inacessível no executável final |
+| Preload via `contextBridge` | API mínima | Só 5 funções expostas, canais IPC fixos — sem passthrough genérico |
+| Validação de IPC | `senderFrame` | Todo handler IPC valida a URL do frame remetente antes de executar |
+| `requestSingleInstanceLock` | ativo | Impossível abrir duas instâncias do app (ex.: uma em prova, outra livre) |
+| Menu da aplicação | `null` | Sem menus nativos com atalhos de escape |
+| CSP via protocolo | espelho da web | Mesma CSP de produção (sem Turnstile), injetada pelo handler `app://` |
+
+### 7.4 Modo Kiosk Durante a Prova
+
+Quando o aluno inicia uma avaliação, o renderer invoca `enterKioskMode()` (pelo mesmo hook `useAssessmentProtection` da web) e o processo main assume o controle:
+
+| Mecanismo | Implementação | O que impede |
+|---|---|---|
+| Tela cheia kiosk | `setKiosk(true)` + `setAlwaysOnTop("screen-saver")` | Minimizar, redimensionar, taskbar |
+| **Bloqueio de captura** | `setContentProtection(true)` | PrintScreen, gravadores e compartilhamento de tela capturam **tela preta** (nível do compositor do Windows) |
+| **Monitores secundários** | Janelas-overlay pretas em tela cheia sobre cada display extra (`focusable: false`, fora da taskbar, também com content protection) | Uso livre do segundo monitor — vetor encontrado em teste real e corrigido |
+| Monitor plugado no meio da prova | Listeners `display-added/removed/metrics-changed` recriam os overlays e registram evento `DISPLAY_CHANGE` | Burlar conectando monitor após o início |
+| Atalhos globais | `globalShortcut` registra PrintScreen, Ctrl+P, F12, Ctrl+Shift+I/J/C, Ctrl+U/R/W, F5, F11, Alt+F4 (+ backup `before-input-event` dentro da janela) | Impressão, DevTools, reload, fechar |
+| Fechamento | `close` e `before-quit` com `preventDefault` durante a prova | Alt+F4, fechar pela taskbar, encerrar o processo pela UI |
+| **Desvio de foco** | `blur` → `win.focus()` + `moveTop()` imediatos + evento `WINDOW_BLUR_ELECTRON` ao renderer | Alt+Tab e clique em outro app: a janela da prova retoma o foco em milissegundos |
+
+**Contagem imediata de violação:** na web, a violação de blur é contada após 5 segundos fora da aba (evita falsos positivos). No desktop esse timer nunca dispararia — o refocus automático devolve o foco antes. Por isso a violação é contada **na hora**, via evento do processo main, com throttle de 4 s (evita múltiplas contagens num único desvio) e período de carência de 1,5 s na entrada do kiosk (a própria transição dispara blur/focus). O sistema de **3 avisos progressivos com cancelamento automático** é exatamente o mesmo da web — o desktop só muda o gatilho.
+
+### 7.5 Vetores de Fraude — Web × Desktop
+
+| Vetor | Web | Desktop (Electron) |
+|---|---|---|
+| Copiar/colar, clique direito, atalhos | Bloqueados | Bloqueados (mesmos hooks) |
+| DevTools | Detecção heurística + bloqueio de atalhos | **Inexistente** (desabilitado no binário) |
+| Troca de aba/janela | Detectada após 5 s → aviso | **Refocus imediato + violação instantânea** |
+| Segundo monitor | **Sem qualquer controle** | **Bloqueado** (overlay em tela cheia) |
+| PrintScreen / gravação | Bloqueio de tecla apenas (gravador externo passa) | **Captura sai preta** (content protection) |
+| Fechar a prova | Confirmação `beforeunload` | **Bloqueado** durante a prova |
+| Extensões de browser | Risco presente | **Inexistente** (não há browser) |
+| Impressão (Ctrl+P) | Bloqueada via tecla | Bloqueada (atalho global + in-window) |
+
+### 7.6 Turnstile na Versão Desktop
+
+O Cloudflare Turnstile exige um **hostname web autorizado** no dashboard — um aplicativo local (`app://bundle`) não tem como passar nessa validação. A decisão foi dispensar o Turnstile **no Electron e em ambiente de desenvolvimento**, mantendo-o obrigatório no deploy web:
+
+```typescript
+// auth-form.tsx — Turnstile só roda em produção web (deploy)
+const skipTurnstile = isElectron() || import.meta.env.DEV;
+```
+
+O risco é baixo: o vetor que o Turnstile mitiga (bots automatizados em formulário público) não se aplica a um executável distribuído de forma controlada pelo professor. Toda a autenticação (Supabase Auth + JWT + RLS) permanece idêntica.
+
+### 7.7 Distribuição
+
+- **Arquivo único**: `CyberAccessShield-1.0.0-portable.exe` — sem instalador, sem dependências; o aluno executa direto.
+- **Sem assinatura de código**: binários Electron não assinados costumam disparar alertas heurísticos de ML em antivírus (ex.: `Suspicious.low.ml.score` no VirusTotal) e o SmartScreen do Windows. São **falsos positivos típicos** de executáveis novos sem reputação acumulada — nenhuma engine de assinatura tradicional acusa o arquivo. A solução definitiva é certificado de assinatura de código (custo anual), listada como trabalho futuro.
+
+### 7.8 Limitações Conhecidas (transparência metodológica)
+
+- **Ctrl+Alt+Del, combos com tecla Win e Alt+Tab** não são bloqueáveis por aplicação alguma sem hook nativo de teclado ou Windows Assigned Access (modo quiosque corporativo). Mitigação adotada: refocus automático em milissegundos + violação contada na hora + sistema de 3 avisos.
+- **Máquina virtual ou segundo dispositivo físico** (outro computador, celular fotografando a tela) estão fora do alcance de qualquer solução por software — limitação compartilhada por todos os proctoring tools comerciais.
+
+---
+
+## 8. Qualidade e Testes
+
+### 8.1 Testes Unitários (Vitest)
 
 126 testes em 7 arquivos cobrindo funções puras de segurança e utilidades:
 
@@ -264,17 +386,17 @@ A coluna `correct_answer` nunca é enviada ao frontend. A RPC `submit_and_grade_
 | `secure-utils.ts` | 13 | 90%+ |
 | `lib/utils.ts` + `date-utils.ts` | 8 | 100% |
 
-### 7.2 SonarCloud (SAST)
+### 8.2 SonarCloud (SAST)
 
 Quality Gate "Sonar way" obrigatório: Security A, Reliability A, Maintainability A, 100% Security Hotspots revisados. Integrado ao CI via GitHub Actions com token `SONAR_TOKEN` como secret do repositório.
 
-### 7.3 ESLint com Plugins de Segurança
+### 8.3 ESLint com Plugins de Segurança
 
 `eslint-plugin-security` detecta padrões inseguros (eval, regex DoS). `eslint-plugin-no-secrets` previne tokens hardcoded.
 
 ---
 
-## 8. CI/CD (GitHub Actions)
+## 9. CI/CD (GitHub Actions)
 
 | Pipeline | Trigger | Etapas |
 |---|---|---|
@@ -286,7 +408,7 @@ Todas as Actions são pinadas por SHA completo (supply chain security). Dependab
 
 ---
 
-## 9. Mapeamento OWASP Top 10 (2021)
+## 10. Mapeamento OWASP Top 10 (2021)
 
 | OWASP | Categoria | Mitigações no Projeto |
 |---|---|---|
@@ -303,7 +425,7 @@ Todas as Actions são pinadas por SHA completo (supply chain security). Dependab
 
 ---
 
-## 10. Limitações e Trabalhos Futuros
+## 11. Limitações e Trabalhos Futuros
 
 1. **Verificação server-side do Turnstile**: implementar Edge Function no Supabase que valide o token via API da Cloudflare antes de processar o login.
 2. **WAF Cloudflare com domínio customizado**: ao adquirir domínio, o proxy Cloudflare ativa WAF, rate limiting e DDoS protection como camada adicional antes do Vercel.
@@ -312,3 +434,5 @@ Todas as Actions são pinadas por SHA completo (supply chain security). Dependab
 5. **MFA**: disponível no Supabase mas não habilitado.
 6. **Code splitting**: bundle atual ultrapassa 800 KB — divisão por `import()` dinâmico reduziria tempo de carregamento.
 7. **Testes de componentes React**: React Testing Library para aumentar cobertura geral.
+8. **Assinatura de código do executável desktop**: certificado de code signing eliminaria alertas SmartScreen/heurísticas de antivírus no `.exe` portátil.
+9. **Auto-update do desktop**: hoje uma nova versão exige redistribuir o `.exe`; `electron-updater` automatizaria isso.
