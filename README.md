@@ -208,6 +208,20 @@ VITE_TURNSTILE_SITE_KEY=sua_sitekey_aqui
 | **lint** | `npm run lint` | ESLint com plugins de segurança |
 | **test** | `npm run test` | Testes unitários (Vitest) |
 | **test:coverage** | `npm run test:coverage` | Testes + relatório de cobertura LCOV |
+| **dev:desktop** | `npm run dev:desktop` | App desktop (Electron) em modo dev contra o Vite |
+| **build:desktop** | `npm run build:desktop` | Gera `.exe` portátil em `release/` (electron-builder) |
+
+---
+
+## 🖥️ Versão Desktop (Electron)
+
+A branch `feature/electron-desktop` empacota a plataforma como **app Windows portátil** (`.exe` único, sem instalação), onde as proteções anti-fraude passam a ser garantidas em nível de SO/janela:
+
+- **Kiosk total durante a prova**: fullscreen kiosk + `alwaysOnTop` + `setContentProtection` (screenshots/gravações saem pretas) + bloqueio de atalhos (`PrintScreen`, `F12`, `Ctrl+Shift+I`, `Ctrl+U`, `Ctrl+R`, `F5`, `Ctrl+W`, `F11`, `Alt+F4`) + bloqueio de fechar janela.
+- **Hardening Electron**: `contextIsolation`, `sandbox`, `nodeIntegration: false`, DevTools desabilitado em produção, instância única, navegação externa e `window.open` negados, permissões (câmera/mic/geo) negadas, IPC com validação de origem.
+- **Protocolo `app://` custom** servindo o build do Vite com fallback SPA e CSP via header (sem Turnstile — desnecessário em ambiente desktop controlado; a versão web mantém).
+- **Limitações documentadas**: `Alt+Tab`, combos com tecla `Win` e `Ctrl+Alt+Del` não são bloqueáveis sem driver/hook nativo — o escape é mitigado por refocus automático + sistema de 3 avisos (violação registrada em `security_logs`).
+- **SmartScreen**: o `.exe` não é assinado digitalmente; o Windows mostra aviso no primeiro uso ("Mais informações" → "Executar assim mesmo"). Inevitável sem certificado de code signing.
 
 ---
 

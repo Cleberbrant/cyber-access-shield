@@ -11,6 +11,7 @@ import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
 import { AuthFormFooter } from "./auth-form/AuthFormFooter";
 import { TurnstileWidget } from "./auth-form/TurnstileWidget";
 import { detectDevTools } from "@/utils/secure-utils";
+import { isElectron } from "@/utils/electron";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -254,7 +255,8 @@ export function AuthForm({ type, className }: AuthFormProps) {
     e.preventDefault();
     setErrors({});
     if (!validateForm()) return;
-    if (!turnstileToken) {
+    // No desktop (Electron) o Turnstile é desabilitado — ambiente controlado
+    if (!isElectron() && !turnstileToken) {
       setErrors({ form: "Confirme que você não é um robô antes de continuar." });
       return;
     }
@@ -315,11 +317,13 @@ export function AuthForm({ type, className }: AuthFormProps) {
             />
           )}
 
-          <TurnstileWidget
-            onSuccess={(token) => setTurnstileToken(token)}
-            onExpire={() => setTurnstileToken(null)}
-            onError={() => setTurnstileToken(null)}
-          />
+          {!isElectron() && (
+            <TurnstileWidget
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+            />
+          )}
 
           {errors.form && (
             <div className="rounded-md bg-destructive/15 p-3 space-y-2">

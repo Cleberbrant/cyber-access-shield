@@ -43,6 +43,17 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' &&
     componentTagger(),
+    // Build desktop (Electron): remove o script do Turnstile do index.html.
+    // Sem ELECTRON=1, o build web permanece byte-idêntico.
+    process.env.ELECTRON === '1' && {
+      name: 'strip-turnstile-script',
+      transformIndexHtml(html: string) {
+        return html.replace(
+          /[ \t]*<script id="cf-turnstile-script"[^>]*><\/script>\r?\n?/,
+          ''
+        );
+      },
+    },
   ].filter(Boolean),
   resolve: {
     alias: {

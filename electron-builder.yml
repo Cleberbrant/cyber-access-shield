@@ -1,0 +1,18 @@
+appId: br.com.tcc.cyberaccessshield
+productName: CyberAccessShield
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+asar: true
+win:
+  target:
+    - target: portable
+      arch:
+        - x64
+  icon: build/icon.ico
+portable:
+  artifactName: "${productName}-${version}-portable.exe"

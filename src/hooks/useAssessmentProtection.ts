@@ -4,8 +4,13 @@ import { useMouseProtection } from "./useMouseProtection";
 import { useBeforeUnloadProtection } from "./useBeforeUnloadProtection";
 import { useWindowBlurProtection } from "./useWindowBlurProtection";
 import { useEffect, useState } from "react";
-import { isAdmin } from "@/utils/secure-utils";
+import {
+  isAdmin,
+  logSecurityEvent,
+  SecurityEventType,
+} from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
+import { isElectron } from "@/utils/electron";
 
 /**
  * Hook central para gerenciar proteções de segurança
@@ -73,6 +78,41 @@ export function useAssessmentProtection() {
   const assessmentId = /\/assessment\/([^/?]+)/.exec(location.pathname)?.[1];
   const searchParams = new URLSearchParams(location.search);
   const sessionId = searchParams.get("session");
+
+  // Desktop (Electron): kiosk total durante a prova, liberado fora dela.
+  // Cobre início (flag + rota → on), término normal (navega p/ resultado → off)
+  // e cancelamento por 3 avisos (flag removida → off).
+  useEffect(() => {
+    if (!isElectron()) return;
+    if (shouldDetectBlur) {
+      window.electronAPI?.enterKioskMode();
+    } else {
+      window.electronAPI?.exitKioskMode();
+    }
+    return () => {
+      window.electronAPI?.exitKioskMode();
+    };
+  }, [shouldDetectBlur]);
+
+  // Desktop (Electron): loga eventos do processo main (atalhos bloqueados,
+  // refocus em blur, tentativa de fechar) reusando o RPC existente.
+  useEffect(() => {
+    if (!isElectron() || !shouldDetectBlur) return;
+    const unsubscribe = window.electronAPI?.onSecurityEvent((event) => {
+      const type =
+        event.type === "WINDOW_BLUR_ELECTRON"
+          ? SecurityEventType.WINDOW_BLUR
+          : SecurityEventType.KEYBOARD_SHORTCUT;
+      logSecurityEvent({
+        type,
+        timestamp: new Date().toISOString(),
+        details: `electron:${event.type}${event.details ? `:${event.details}` : ""}`,
+        assessmentId,
+        sessionId: sessionId || undefined,
+      });
+    });
+    return unsubscribe;
+  }, [shouldDetectBlur, assessmentId, sessionId]);
 
   // Aplicar proteções via hooks
   useKeyboardProtection(shouldProtect, assessmentId, sessionId || undefined);
