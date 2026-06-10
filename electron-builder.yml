@@ -3,6 +3,9 @@ productName: CyberAccessShield
 directories:
   output: release
   buildResources: build
+# Usa o Electron ja instalado em node_modules em vez de baixar/extrair
+# (evita race de EPERM com antivirus no rename de win-unpacked.tmp)
+electronDist: node_modules/electron/dist
 files:
   - dist/**/*
   - dist-electron/**/*
