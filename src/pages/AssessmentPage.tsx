@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import {
@@ -34,11 +34,11 @@ export default function AssessmentPage() {
   // Obter o sessionId da URL
   const sessionIdParam = searchParams.get("session");
 
-  // Carregar dados da avaliação
+  // Carregar dados da avaliaÃ§Ã£o
   const { assessment, loading, sessionId, sessionProgress, loadError } =
     useAssessmentLoader(assessmentId, sessionIdParam);
 
-  // Inicializar índice da questão com progresso salvo
+  // Inicializar Ã­ndice da questÃ£o com progresso salvo
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
     sessionProgress?.currentQuestionIndex || 0
   );
@@ -54,21 +54,21 @@ export default function AssessmentPage() {
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } =
     useAssessmentAnswers(sessionId);
 
-  // IMPORTANTE: Definir handleSubmitAssessment antes de usá-lo em outros hooks
+  // IMPORTANTE: Definir handleSubmitAssessment antes de usÃ¡-lo em outros hooks
   const { isSubmitting, handleSubmitAssessment } = useAssessmentSubmission(
     assessmentId || "",
     sessionId
   );
 
-  // Usar a duração exata da avaliação como configurada no banco de dados
+  // Usar a duraÃ§Ã£o exata da avaliaÃ§Ã£o como configurada no banco de dados
   const duration = assessment?.duration;
 
   // Timer com tempo decorrido inicial
   const initialTimeElapsed = sessionProgress?.timeElapsedSeconds || 0;
 
-  // Callback para atualização de progresso (não usado ainda, mas preparado)
+  // Callback para atualizaÃ§Ã£o de progresso (nÃ£o usado ainda, mas preparado)
   const handleProgressUpdate = (timeElapsed: number) => {
-    // Progresso será salvo pelo hook useSessionProgress
+    // Progresso serÃ¡ salvo pelo hook useSessionProgress
   };
 
   // Usar handleSubmitAssessment depois que ele foi definido
@@ -88,10 +88,10 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
     sessionId,
     currentQuestionIndex,
     timeElapsed,
-    !isSubmitting // Desabilitar durante submissão
+    !isSubmitting // Desabilitar durante submissÃ£o
   );
 
-  // Função para tentar novamente caso ocorra um erro
+  // FunÃ§Ã£o para tentar novamente caso ocorra um erro
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
     navigate(
@@ -99,14 +99,14 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
     );
   };
 
-  // Ativar flag de avaliação em andamento quando componente montar
+  // Ativar flag de avaliaÃ§Ã£o em andamento quando componente montar
   useEffect(() => {
-    // Definir flag apenas quando entrar na página de avaliação
+    // Definir flag apenas quando entrar na pÃ¡gina de avaliaÃ§Ã£o
     localStorage.setItem("assessmentInProgress", "true");
-    // Notificar o usuário
+    // Notificar o usuÃ¡rio
     toast({
-      title: "Modo Avaliação Ativado",
-      description: "Proteções de segurança foram ativadas para a avaliação.",
+      title: "Modo AvaliaÃ§Ã£o Ativado",
+      description: "ProteÃ§Ãµes de seguranÃ§a foram ativadas para a avaliaÃ§Ã£o.",
       duration: 4000,
     });
 
@@ -118,14 +118,14 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (loading) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-xl font-medium">Carregando avaliação...</p>
+              <p className="text-xl font-medium">Carregando avaliaÃ§Ã£o...</p>
               <p className="text-muted-foreground mt-2">
-                Aguarde enquanto preparamos sua avaliação
+                Aguarde enquanto preparamos sua avaliaÃ§Ã£o
               </p>
             </div>
           </div>
@@ -136,17 +136,17 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (loadError || !assessment) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">
-                Erro ao carregar avaliação
+                Erro ao carregar avaliaÃ§Ã£o
               </h2>
               <p className="text-muted-foreground mb-4 max-w-md mx-auto">
                 {loadError ||
-                  "Não foi possível encontrar a avaliação solicitada."}
+                  "NÃ£o foi possÃ­vel encontrar a avaliaÃ§Ã£o solicitada."}
               </p>
               <div className="space-x-4">
                 <Button
@@ -168,15 +168,15 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (!sessionId) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">Sessão não encontrada</h2>
+              <h2 className="text-2xl font-bold mb-2">SessÃ£o nÃ£o encontrada</h2>
               <p className="text-muted-foreground mb-4">
-                Não foi possível encontrar ou criar uma sessão para esta
-                avaliação.
+                NÃ£o foi possÃ­vel encontrar ou criar uma sessÃ£o para esta
+                avaliaÃ§Ã£o.
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard
@@ -189,7 +189,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
   }
 
   return (
-    <SecureAppShell>
+    <SecureAppShell layout="focus">
       <div className="container py-8">
         <AssessmentHeader
           title={assessment.title}
@@ -201,7 +201,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
         <Card className="mb-6 secure-content no-select">
           <CardHeader>
-            <CardTitle>Questão {currentQuestionIndex + 1}</CardTitle>
+            <CardTitle>QuestÃ£o {currentQuestionIndex + 1}</CardTitle>
           </CardHeader>
           <CardContent>
             <QuestionRenderer
@@ -245,7 +245,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
                   currentQuestionIndex === assessment.questions.length - 1
                 }
               >
-                Próxima
+                PrÃ³xima
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
@@ -274,7 +274,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
                 Enviando...
               </>
             ) : (
-              "Finalizar Avaliação"
+              "Finalizar AvaliaÃ§Ã£o"
             )}
           </Button>
         </div>
