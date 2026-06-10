@@ -6,7 +6,10 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+// Tempo para remover o toast do estado APÓS fechar (animação de saída)
+const TOAST_REMOVE_DELAY = 5000
+// Duração padrão de exibição quando o chamador não especifica
+const TOAST_DEFAULT_DURATION = 5000
 
 type ToasterToast = ToastProps & {
   id: string
@@ -152,6 +155,7 @@ function toast({ ...props }: Toast) {
   dispatch({
     type: "ADD_TOAST",
     toast: {
+      duration: TOAST_DEFAULT_DURATION,
       ...props,
       id,
       open: true,

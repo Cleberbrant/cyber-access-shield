@@ -87,7 +87,7 @@ export function useWindowBlurProtection(
         if (newWarningCount === 1) {
           // PRIMEIRO AVISO
           toast({
-            title: "⚠️ Primeiro Aviso",
+            title: "Primeiro aviso",
             description:
               "Detectamos que você saiu da aba da prova. Permaneça na aba para continuar.",
             variant: "destructive",
@@ -96,7 +96,7 @@ export function useWindowBlurProtection(
         } else if (newWarningCount === 2) {
           // SEGUNDO AVISO (mais severo)
           toast({
-            title: "⛔ Segundo Aviso - ATENÇÃO",
+            title: "Segundo aviso — atenção",
             description:
               "Segunda violação detectada! Uma terceira violação cancelará sua prova automaticamente.",
             variant: "destructive",
@@ -150,7 +150,7 @@ export function useWindowBlurProtection(
 
         // Mostrar toast final
         toast({
-          title: "🚫 Avaliação Cancelada",
+          title: "Avaliação cancelada",
           description:
             "Sua avaliação foi cancelada devido a múltiplas violações de segurança.",
           variant: "destructive",
