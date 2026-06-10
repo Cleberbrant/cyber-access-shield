@@ -34,11 +34,11 @@ export default function AssessmentPage() {
   // Obter o sessionId da URL
   const sessionIdParam = searchParams.get("session");
 
-  // Carregar dados da avaliaÃ§Ã£o
+  // Carregar dados da avaliação
   const { assessment, loading, sessionId, sessionProgress, loadError } =
     useAssessmentLoader(assessmentId, sessionIdParam);
 
-  // Inicializar Ã­ndice da questÃ£o com progresso salvo
+  // Inicializar índice da questão com progresso salvo
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(
     sessionProgress?.currentQuestionIndex || 0
   );
@@ -54,21 +54,21 @@ export default function AssessmentPage() {
   const { answers, matchPairs, handleAnswerChange, handleMatchPairChange } =
     useAssessmentAnswers(sessionId);
 
-  // IMPORTANTE: Definir handleSubmitAssessment antes de usÃ¡-lo em outros hooks
+  // IMPORTANTE: Definir handleSubmitAssessment antes de usá-lo em outros hooks
   const { isSubmitting, handleSubmitAssessment } = useAssessmentSubmission(
     assessmentId || "",
     sessionId
   );
 
-  // Usar a duraÃ§Ã£o exata da avaliaÃ§Ã£o como configurada no banco de dados
+  // Usar a duração exata da avaliação como configurada no banco de dados
   const duration = assessment?.duration;
 
   // Timer com tempo decorrido inicial
   const initialTimeElapsed = sessionProgress?.timeElapsedSeconds || 0;
 
-  // Callback para atualizaÃ§Ã£o de progresso (nÃ£o usado ainda, mas preparado)
+  // Callback para atualização de progresso (não usado ainda, mas preparado)
   const handleProgressUpdate = (timeElapsed: number) => {
-    // Progresso serÃ¡ salvo pelo hook useSessionProgress
+    // Progresso será salvo pelo hook useSessionProgress
   };
 
   // Usar handleSubmitAssessment depois que ele foi definido
@@ -88,10 +88,10 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
     sessionId,
     currentQuestionIndex,
     timeElapsed,
-    !isSubmitting // Desabilitar durante submissÃ£o
+    !isSubmitting // Desabilitar durante submissão
   );
 
-  // FunÃ§Ã£o para tentar novamente caso ocorra um erro
+  // Função para tentar novamente caso ocorra um erro
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
     navigate(
@@ -99,14 +99,14 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
     );
   };
 
-  // Ativar flag de avaliaÃ§Ã£o em andamento quando componente montar
+  // Ativar flag de avaliação em andamento quando componente montar
   useEffect(() => {
-    // Definir flag apenas quando entrar na pÃ¡gina de avaliaÃ§Ã£o
+    // Definir flag apenas quando entrar na página de avaliação
     localStorage.setItem("assessmentInProgress", "true");
-    // Notificar o usuÃ¡rio
+    // Notificar o usuário
     toast({
-      title: "Modo AvaliaÃ§Ã£o Ativado",
-      description: "ProteÃ§Ãµes de seguranÃ§a foram ativadas para a avaliaÃ§Ã£o.",
+      title: "Modo Avaliação Ativado",
+      description: "Proteções de segurança foram ativadas para a avaliação.",
       duration: 4000,
     });
 
@@ -123,9 +123,9 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-xl font-medium">Carregando avaliaÃ§Ã£o...</p>
+              <p className="text-xl font-medium">Carregando avaliação...</p>
               <p className="text-muted-foreground mt-2">
-                Aguarde enquanto preparamos sua avaliaÃ§Ã£o
+                Aguarde enquanto preparamos sua avaliação
               </p>
             </div>
           </div>
@@ -142,11 +142,11 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">
-                Erro ao carregar avaliaÃ§Ã£o
+                Erro ao carregar avaliação
               </h2>
               <p className="text-muted-foreground mb-4 max-w-md mx-auto">
                 {loadError ||
-                  "NÃ£o foi possÃ­vel encontrar a avaliaÃ§Ã£o solicitada."}
+                  "Não foi possível encontrar a avaliação solicitada."}
               </p>
               <div className="space-x-4">
                 <Button
@@ -173,10 +173,10 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="h-10 w-10 text-amber-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">SessÃ£o nÃ£o encontrada</h2>
+              <h2 className="text-2xl font-bold mb-2">Sessão não encontrada</h2>
               <p className="text-muted-foreground mb-4">
-                NÃ£o foi possÃ­vel encontrar ou criar uma sessÃ£o para esta
-                avaliaÃ§Ã£o.
+                Não foi possível encontrar ou criar uma sessão para esta
+                avaliação.
               </p>
               <Button onClick={() => navigate("/dashboard")}>
                 Voltar para o Dashboard
@@ -190,18 +190,20 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   return (
     <SecureAppShell layout="focus">
-      <div className="container py-8">
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
         <AssessmentHeader
           title={assessment.title}
           description={assessment.description}
           timeLeft={formatTimeLeft()}
           currentQuestion={currentQuestionIndex}
           totalQuestions={assessment.questions.length}
+          timeLeftSeconds={timeLeft}
+          totalSeconds={(duration || 1) * 60}
         />
 
         <Card className="mb-6 secure-content no-select">
           <CardHeader>
-            <CardTitle>QuestÃ£o {currentQuestionIndex + 1}</CardTitle>
+            <CardTitle>Questão {currentQuestionIndex + 1}</CardTitle>
           </CardHeader>
           <CardContent>
             <QuestionRenderer
@@ -245,7 +247,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
                   currentQuestionIndex === assessment.questions.length - 1
                 }
               >
-                PrÃ³xima
+                Próxima
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             )}
@@ -274,7 +276,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
                 Enviando...
               </>
             ) : (
-              "Finalizar AvaliaÃ§Ã£o"
+              "Finalizar Avaliação"
             )}
           </Button>
         </div>

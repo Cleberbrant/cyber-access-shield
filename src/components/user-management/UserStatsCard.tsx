@@ -14,46 +14,50 @@ export function UserStatsCard({ stats }: UserStatsCardProps) {
       label: "Total",
       value: stats.total,
       icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     {
       label: "Admins",
       value: stats.admins,
       icon: UserCog,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-accent",
+      bgColor: "bg-accent/10",
     },
     {
       label: "Alunos",
       value: stats.students,
       icon: GraduationCap,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
+      color: "text-primary",
+      bgColor: "bg-primary/10",
     },
     {
       label: "Inativos",
       value: stats.inactive,
       icon: UserX,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
       {statItems.map((item) => (
-        <Card key={item.label}>
-          <CardContent className="p-6">
+        <Card key={item.label} className="cyber-glass">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {item.label}
                 </p>
-                <p className="text-3xl font-bold mt-2">{item.value}</p>
+                <p className="font-display text-2xl font-bold mt-1.5">
+                  {item.value}
+                </p>
               </div>
-              <div className={`rounded-full p-3 ${item.bgColor}`}>
-                <item.icon className={`h-6 w-6 ${item.color}`} />
+              <div
+                className={`flex h-9 w-9 items-center justify-center rounded-md ${item.bgColor}`}
+              >
+                <item.icon className={`h-5 w-5 ${item.color}`} />
               </div>
             </div>
           </CardContent>

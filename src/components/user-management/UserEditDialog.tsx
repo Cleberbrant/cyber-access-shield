@@ -107,7 +107,7 @@ export function UserEditDialog({
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle className="font-display">Editar Usuário</DialogTitle>
             <DialogDescription>
               Altere as informações do usuário
             </DialogDescription>

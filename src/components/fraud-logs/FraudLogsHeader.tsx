@@ -13,12 +13,14 @@ export function FraudLogsHeader({
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
       <div className="flex items-center gap-3">
-        <div className="rounded-full w-12 h-12 flex items-center justify-center bg-gradient-to-r from-cyber-blue to-cyber-teal">
-          <Shield className="h-6 w-6 text-white" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <Shield className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold">Logs de Fraude</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
+            Logs de Fraude
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Monitore e analise tentativas de violação de segurança
           </p>
         </div>

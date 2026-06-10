@@ -29,7 +29,10 @@ export function IPAddress({ ip, className }: IPAddressProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Badge variant="outline" className={className}>
+      <Badge
+        variant="outline"
+        className={`font-mono text-xs ${className ?? ""}`}
+      >
         <Globe className="h-3 w-3 mr-1" />
         {revealed ? ip : maskIP(ip)}
       </Badge>

@@ -17,29 +17,38 @@ export function UserFilters({
   onSearchChange,
 }: UserFiltersProps) {
   return (
-    <div className="space-y-4 mb-6">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
       {/* Tabs de filtro */}
       <Tabs
         value={filter}
         onValueChange={(value) => onFilterChange(value as UserFilter)}
+        className="shrink-0"
       >
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">Todos</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
-          <TabsTrigger value="students">Alunos</TabsTrigger>
-          <TabsTrigger value="inactive">Inativos</TabsTrigger>
+        <TabsList className="h-9 bg-secondary/50">
+          <TabsTrigger value="all" className="text-xs">
+            Todos
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="text-xs">
+            Admins
+          </TabsTrigger>
+          <TabsTrigger value="students" className="text-xs">
+            Alunos
+          </TabsTrigger>
+          <TabsTrigger value="inactive" className="text-xs">
+            Inativos
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       {/* Input de busca */}
-      <div className="relative">
+      <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar por email..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
+          className="h-9 bg-secondary/50 pl-10"
         />
       </div>
     </div>

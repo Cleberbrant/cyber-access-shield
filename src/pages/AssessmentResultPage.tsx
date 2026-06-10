@@ -305,7 +305,9 @@ setResult({
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold">{result?.title} - Resultado</h1>
+            <h1 className="font-display text-3xl font-bold tracking-tight">
+              {result?.title} - Resultado
+            </h1>
             {result && result.maxAttempts > 1 && (
               <Badge variant="secondary" className="text-base px-3 py-1">
                 Tentativa {result.attemptNumber}/{result.maxAttempts}
@@ -347,25 +349,82 @@ setResult({
         )}
 
         <div className="grid gap-6 lg:grid-cols-3 mb-8">
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-2 cyber-glass">
             <CardHeader>
-              <CardTitle>Pontuação</CardTitle>
+              <CardTitle className="font-display">Pontuação</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Resultado</span>
-                  <span className="font-bold">
-                    {result?.isCancelled ? 0 : result?.score} de{" "}
-                    {result?.maxScore} pontos
-                  </span>
+              <div className="flex flex-col items-center gap-6 sm:flex-row">
+                {/* Progresso radial */}
+                <div className="relative h-36 w-36 shrink-0">
+                  <svg viewBox="0 0 144 144" className="h-full w-full -rotate-90">
+                    <defs>
+                      <linearGradient id="score-grad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="#22D3EE" />
+                        <stop offset="100%" stopColor="#8B5CF6" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      cx="72"
+                      cy="72"
+                      r="60"
+                      fill="none"
+                      strokeWidth="10"
+                      className="stroke-secondary"
+                    />
+                    <circle
+                      cx="72"
+                      cy="72"
+                      r="60"
+                      fill="none"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      stroke={
+                        !result?.isCancelled && result?.percentageScore >= 70
+                          ? "url(#score-grad)"
+                          : "hsl(var(--destructive))"
+                      }
+                      strokeDasharray={`${
+                        ((result?.isCancelled ? 0 : result?.percentageScore ?? 0) /
+                          100) *
+                        377
+                      } 377`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span
+                      className={`font-display text-3xl font-bold ${
+                        !result?.isCancelled && result?.percentageScore >= 70
+                          ? "cyber-text-gradient"
+                          : "text-destructive"
+                      }`}
+                    >
+                      {Math.round(
+                        result?.isCancelled ? 0 : result?.percentageScore ?? 0
+                      )}
+                      %
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {result?.isCancelled ? 0 : result?.score}/{result?.maxScore}
+                    </span>
+                  </div>
                 </div>
-                <Progress
-                  value={result?.isCancelled ? 0 : result?.percentageScore}
-                  className="h-3"
-                />
-                <div className="flex justify-end mt-1 text-sm text-muted-foreground">
-                  {result?.isCancelled ? 0 : result?.percentageScore}%
+
+                <div className="w-full flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Resultado</span>
+                    <span className="font-bold">
+                      {result?.isCancelled ? 0 : result?.score} de{" "}
+                      {result?.maxScore} pontos
+                    </span>
+                  </div>
+                  <Progress
+                    value={result?.isCancelled ? 0 : result?.percentageScore}
+                    className="h-2"
+                  />
+                  <div className="flex justify-end mt-1 text-sm text-muted-foreground">
+                    {result?.isCancelled ? 0 : result?.percentageScore}%
+                  </div>
                 </div>
               </div>
 
@@ -463,7 +522,9 @@ setResult({
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold">Resumo das Questões</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">
+            Resumo das Questões
+          </h2>
 
           {result?.questionsResults.map((question, index) => (
             <ResultQuestionRenderer

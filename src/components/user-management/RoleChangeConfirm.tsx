@@ -32,7 +32,9 @@ export function RoleChangeConfirm({
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>⚠️ Alterar Tipo de Conta?</AlertDialogTitle>
+          <AlertDialogTitle className="font-display">
+            ⚠️ Alterar Tipo de Conta?
+          </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>
               Usuário:{" "}

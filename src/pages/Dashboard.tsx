@@ -2,7 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
-import { Plus, Shield, Users } from "lucide-react";
+import {
+  Plus,
+  Shield,
+  Users,
+  FileText,
+  CheckCircle2,
+  CalendarClock,
+} from "lucide-react";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAssessmentDeletion } from "@/hooks/useAssessmentDeletion";
 import { AssessmentsList } from "@/components/dashboard/AssessmentsList";
@@ -218,6 +225,15 @@ export default function Dashboard() {
     navigate(`/assessment-result/${assessmentId}`);
   };
 
+  // Estatísticas derivadas da lista já carregada (sem novas queries)
+  const totalAssessments = assessments.length;
+  const availableNowCount = assessments.filter((a) =>
+    isAssessmentAvailable(a.available_from),
+  ).length;
+  const scheduledCount = assessments.filter(
+    (a) => a.available_from && !isAssessmentAvailable(a.available_from),
+  ).length;
+
   const confirmDeleteAssessment = async () => {
     if (!assessmentToDelete) return;
 
@@ -238,9 +254,11 @@ export default function Dashboard() {
   return (
     <SecureAppShell>
       <div className="container py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 animate-fade-up">
           <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight font-display">
+              Dashboard
+            </h1>
             <p className="text-muted-foreground mt-1">
               {isUserAdmin
                 ? "Gerencie e crie avaliações seguras para seus alunos."
@@ -249,7 +267,7 @@ export default function Dashboard() {
           </div>
 
           {isUserAdmin && (
-            <div className="flex gap-3 mt-4 sm:mt-0">
+            <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={() => navigate("/fraud-logs")}>
                 <Shield className="mr-2 h-4 w-4" />
                 Logs
@@ -261,13 +279,60 @@ export default function Dashboard() {
                 <Users className="mr-2 h-4 w-4" />
                 Usuários
               </Button>
-              <Button onClick={() => navigate("/create-assessment")}>
+              <Button
+                onClick={() => navigate("/create-assessment")}
+                className="bg-gradient-brand text-white glow-primary hover:opacity-90 transition-opacity"
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Avaliação
               </Button>
             </div>
           )}
         </div>
+
+        {isUserAdmin && !loading && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8 animate-fade-up">
+            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Total de avaliações
+                </p>
+                <p className="font-display text-2xl font-bold">
+                  {totalAssessments}
+                </p>
+              </div>
+            </div>
+            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Disponíveis agora
+                </p>
+                <p className="font-display text-2xl font-bold">
+                  {availableNowCount}
+                </p>
+              </div>
+            </div>
+            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
+                <CalendarClock className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Agendadas
+                </p>
+                <p className="font-display text-2xl font-bold">
+                  {scheduledCount}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <AssessmentsList
           assessments={assessments}

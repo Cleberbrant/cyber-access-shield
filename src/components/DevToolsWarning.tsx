@@ -36,14 +36,14 @@ export function DevToolsWarning({ context }: DevToolsWarningProps) {
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="max-w-md mx-4 rounded-2xl border border-red-500/30 bg-slate-900 p-8 text-center shadow-2xl shadow-red-500/10">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
-                    <ShieldAlert className="h-8 w-8 text-red-400" />
+            <div className="max-w-md mx-4 rounded-2xl border border-destructive/30 bg-card p-8 text-center shadow-2xl shadow-destructive/10">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/20">
+                    <ShieldAlert className="h-8 w-8 text-destructive" />
                 </div>
-                <h2 className="mb-3 text-xl font-bold text-white">{title}</h2>
-                <p className="text-sm text-slate-300 leading-relaxed">{description}</p>
-                <div className="mt-6 rounded-lg bg-red-500/10 border border-red-500/20 p-3">
-                    <p className="text-xs text-red-300">{hint}</p>
+                <h2 className="mb-3 font-display text-xl font-bold text-foreground">{title}</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+                <div className="mt-6 rounded-lg bg-destructive/10 border border-destructive/20 p-3">
+                    <p className="text-xs text-destructive">{hint}</p>
                 </div>
             </div>
         </div>

@@ -14,7 +14,7 @@ import {
   Pencil,
   Trash2,
   Eye,
-  CheckCircle,
+  RotateCcw,
 } from "lucide-react";
 import { formatDate } from "@/utils/date-utils";
 import {
@@ -65,54 +65,67 @@ export function AssessmentCard({
   const maxAttempts = assessment.max_attempts || 1;
   const canAttempt = maxAttempts === 0 || currentAttempts < maxAttempts;
 
+  // Status visual do card (apenas apresentação)
+  const isScheduled = !available && !!assessment.available_from;
+  const isExhausted = !isAdmin && available && !canAttempt;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle>{assessment.title}</CardTitle>
-          {!available && assessment.available_from && (
-            <Badge variant="secondary" className="ml-2">
-              Em {timeInfo?.formattedTime}
+    <Card className="cyber-glass flex flex-col transition-all duration-300 hover:-translate-y-1 hover:glow-border">
+      <CardHeader className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg leading-snug">
+            {assessment.title}
+          </CardTitle>
+          {isScheduled ? (
+            <Badge className="shrink-0 bg-accent/15 text-accent border-accent/30 hover:bg-accent/15">
+              Agendada
+            </Badge>
+          ) : isExhausted ? (
+            <Badge className="shrink-0 bg-muted text-muted-foreground border-border hover:bg-muted">
+              Esgotada
+            </Badge>
+          ) : (
+            <Badge className="shrink-0 bg-primary/15 text-primary border-primary/30 hover:bg-primary/15">
+              Disponível
             </Badge>
           )}
         </div>
-        <CardDescription>
-          <div className="flex items-center text-sm">
-            <Calendar className="mr-1 h-3 w-3" />
-            Criada em {formatDate(assessment.created_at)}
-          </div>
+        <CardDescription className="line-clamp-3">
+          {assessment.description || "Sem descrição"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-          {assessment.description || "Sem descrição"}
-        </p>
-
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center">
-            <Clock className="mr-1 h-4 w-4" />
+      <CardContent className="flex-1">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-primary/70" />
             {assessment.duration_minutes} minutos
           </div>
 
           {!isAdmin && maxAttempts > 0 && (
-            <div className="flex items-center">
-              <CheckCircle className="mr-1 h-4 w-4" />
+            <div className="flex items-center gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5 text-primary/70" />
               Tentativas: {currentAttempts}/{maxAttempts}
             </div>
           )}
 
           {!isAdmin && maxAttempts === 0 && (
-            <div className="flex items-center">
-              <CheckCircle className="mr-1 h-4 w-4" />
+            <div className="flex items-center gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5 text-primary/70" />
               Tentativas: Ilimitadas
             </div>
           )}
+
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-primary/70" />
+            Criada em {formatDate(assessment.created_at)}
+          </div>
         </div>
 
         {!available && assessment.available_from && (
-          <div className="mt-3 p-2 bg-muted rounded text-xs">
+          <div className="mt-4 rounded-md border border-accent/20 bg-accent/10 px-3 py-2 text-xs text-accent">
             Disponível a partir de{" "}
             {formatAvailabilityDate(assessment.available_from)}
+            {timeInfo ? ` (em ${timeInfo.formattedTime})` : ""}
           </div>
         )}
       </CardContent>
@@ -151,7 +164,10 @@ export function AssessmentCard({
 
             {/* Botão Iniciar/Continuar */}
             {available && canAttempt ? (
-              <Button onClick={() => onStartAssessment(assessment.id)}>
+              <Button
+                onClick={() => onStartAssessment(assessment.id)}
+                className="bg-gradient-brand text-white glow-primary hover:opacity-90 transition-opacity"
+              >
                 {assessment.hasIncompleteSession ? "Continuar" : "Iniciar"}
               </Button>
             ) : !available ? (

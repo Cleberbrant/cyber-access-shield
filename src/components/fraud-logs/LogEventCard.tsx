@@ -17,12 +17,16 @@ export function LogEventCard({ log }: LogEventCardProps) {
   const severity = getEventSeverity(log.event_type);
 
   return (
-    <Card className="hover:border-primary/50 transition-colors">
-      <CardContent className="pt-4">
-        <div className="flex items-start justify-between mb-2">
+    <Card className="border-border/60 bg-card/60 hover:border-primary/50 transition-colors">
+      <CardContent className="pt-3 pb-3">
+        <div className="flex items-start justify-between mb-1.5">
           <div className="flex items-center gap-2">
+            <span
+              className={`h-2 w-2 rounded-full bg-current ${severity.color}`}
+              aria-hidden="true"
+            />
             <AlertTriangle className={`h-4 w-4 ${severity.color}`} />
-            <span className="font-medium">
+            <span className="text-sm font-medium">
               {formatEventType(log.event_type)}
             </span>
           </div>
@@ -32,13 +36,13 @@ export function LogEventCard({ log }: LogEventCardProps) {
         </div>
 
         {log.event_details && (
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-2">
             {log.event_details}
           </p>
         )}
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 font-mono text-xs">
             <Clock className="h-3 w-3" />
             {formatTimestamp(log.created_at)}
           </div>

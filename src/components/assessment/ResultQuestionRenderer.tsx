@@ -77,8 +77,13 @@ export function ResultQuestionRenderer({
 
 
   return (
-    <Card key={question.id} className="overflow-hidden">
-      <div className={`h-1 ${isCorrect ? "bg-green-500" : "bg-red-500"}`} />
+    <Card
+      key={question.id}
+      className={`overflow-hidden border-l-2 ${
+        isCorrect ? "border-l-green-500" : "border-l-destructive"
+      }`}
+    >
+      <div className={`h-1 ${isCorrect ? "bg-green-500" : "bg-destructive"}`} />
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-base font-medium">

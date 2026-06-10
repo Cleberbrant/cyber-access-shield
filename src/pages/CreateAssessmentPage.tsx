@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,7 @@ import {
   Code,
   AlignJustify,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -767,8 +768,8 @@ export default function CreateAssessmentPage() {
           Voltar ao Dashboard
         </Button>
 
-        <div className="mb-8 space-y-4">
-          <h1 className="text-3xl font-bold">
+        <div className="mb-8 space-y-2 animate-fade-up">
+          <h1 className="text-3xl font-bold tracking-tight font-display">
             {isEditMode ? "Editar Avaliação" : "Criar Nova Avaliação"}
           </h1>
           <p className="text-muted-foreground">
@@ -784,10 +785,58 @@ export default function CreateAssessmentPage() {
             <span>Carregando...</span>
           </div>
         ) : (
-          <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="pt-6">
+          <div className="grid gap-8 lg:grid-cols-[320px_1fr] items-start">
+            <aside className="lg:sticky lg:top-20">
+              <div className="cyber-glass rounded-xl p-6 space-y-5 animate-fade-up">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Resumo
+                </p>
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Título</p>
+                  <p className="font-display text-lg font-semibold leading-snug break-words">
+                    {title || "Sem título"}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Duração
+                    </p>
+                    <p className="font-display text-2xl font-bold">
+                      {duration || "0"}
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        min
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Questões
+                    </p>
+                    <p className="font-display text-2xl font-bold">
+                      {questions.length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border-t border-border/60 pt-4">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Tentativas
+                  </p>
+                  <p className="text-sm font-medium">
+                    {maxAttempts === "0" ? "Ilimitadas" : maxAttempts}
+                  </p>
+                </div>
+              </div>
+            </aside>
+
+            <div className="space-y-6">
+              <section className="cyber-glass rounded-xl p-6">
+                <h3 className="text-lg font-medium mb-4">
+                  Informações da Avaliação
+                </h3>
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="title">Título da avaliação</Label>
@@ -863,37 +912,10 @@ export default function CreateAssessmentPage() {
                       </p>
                     </div>
 
-                    <div className="pt-4">
-                      <p className="text-sm font-medium mb-2">Resumo:</p>
-                      <ul className="text-sm space-y-1">
-                        <li>
-                          Questões:{" "}
-                          <span className="font-medium">
-                            {questions.length}
-                          </span>
-                        </li>
-                        <li>
-                          Duração:{" "}
-                          <span className="font-medium">
-                            {duration} minutos
-                          </span>
-                        </li>
-                        <li>
-                          Tentativas:{" "}
-                          <span className="font-medium">
-                            {maxAttempts === "0" ? "Ilimitadas" : maxAttempts}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+              </section>
 
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardContent className="pt-6">
+              <section className="cyber-glass rounded-xl p-6">
                   <h3 className="text-lg font-medium mb-4">
                     Adicionar Nova Questão
                   </h3>
@@ -946,17 +968,29 @@ export default function CreateAssessmentPage() {
 
                     {renderQuestionFields()}
 
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button variant="outline" onClick={resetQuestionForm}>
-                        Limpar
+                    <div className="space-y-3 pt-4">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={addQuestion}
+                        className="h-12 w-full rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-foreground transition-colors"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar questão
                       </Button>
-                      <Button onClick={addQuestion} className="cyber-button">
-                        Adicionar Questão
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={resetQuestionForm}
+                          className="text-muted-foreground"
+                        >
+                          Limpar campos
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+              </section>
 
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">
@@ -964,31 +998,37 @@ export default function CreateAssessmentPage() {
                 </h3>
 
                 {questions.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-8 text-center">
+                  <div className="cyber-glass rounded-xl">
+                    <div className="py-8 px-6 text-center">
                       <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
                       <p className="text-muted-foreground">
                         Nenhuma questão adicionada. Use o formulário acima para
                         adicionar questões.
                       </p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     {questions.map((question, index) => (
-                      <Card key={question.id}>
-                        <CardContent className="py-4">
-                          <div className="flex items-start justify-between">
+                      <div
+                        key={question.id}
+                        className="cyber-glass rounded-xl animate-fade-up"
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3">
-                              <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-full border bg-muted">
+                              <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-gradient-brand text-white">
                                 <span className="text-xs font-medium">
                                   {index + 1}
                                 </span>
                               </div>
                               <div>
-                                <div className="flex items-center gap-2 mb-1">
+                                <div className="flex items-center gap-2 mb-1.5">
                                   {getQuestionTypeIcon(question.type)}
-                                  <span className="text-xs text-muted-foreground capitalize">
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] uppercase tracking-wide text-muted-foreground border-border"
+                                  >
                                     {question.type === "multiple_choice"
                                       ? "Múltipla escolha"
                                       : question.type === "true_false"
@@ -1000,7 +1040,7 @@ export default function CreateAssessmentPage() {
                                             : question.type === "matching"
                                               ? "Correspondência"
                                               : ""}
-                                  </span>
+                                  </Badge>
                                 </div>
                                 <p className="font-medium">{question.text}</p>
 
@@ -1014,7 +1054,7 @@ export default function CreateAssessmentPage() {
                                         >
                                           <div
                                             className={`h-3 w-3 rounded-full ${i === question.correctAnswer
-                                              ? "bg-cyber-blue"
+                                              ? "bg-primary"
                                               : "bg-muted"
                                               }`}
                                           ></div>
@@ -1049,14 +1089,14 @@ export default function CreateAssessmentPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeQuestion(question.id)}
-                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                              className="shrink-0 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                             >
-                              <Minus className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                               <span className="sr-only">Remover questão</span>
                             </Button>
                           </div>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1079,7 +1119,7 @@ export default function CreateAssessmentPage() {
                     !duration ||
                     questions.length === 0
                   }
-                  className="cyber-button"
+                  className="bg-gradient-brand text-white glow-primary hover:opacity-90 transition-opacity"
                 >
                   {loading ? (
                     <>

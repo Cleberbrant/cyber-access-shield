@@ -276,19 +276,19 @@ export function AuthForm({ type, className }: AuthFormProps) {
   };
 
   return (
-    <Card className={cn("w-full max-w-md border-slate-200 shadow-md", className)}>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">
+    <Card className={cn("w-full max-w-md cyber-glass shadow-lg", className)}>
+      <CardHeader className="space-y-2 pb-4">
+        <CardTitle className="text-2xl font-display font-bold tracking-tight">
           {type === "login" ? "Entrar" : "Criar Conta"}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-muted-foreground">
           {type === "login"
             ? "Entre com seu email e senha para acessar sua conta"
             : "Preencha suas informações para criar uma nova conta"}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <EmailInput
             email={email}
             setEmail={setEmail}

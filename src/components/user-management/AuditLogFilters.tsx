@@ -17,29 +17,38 @@ export function AuditLogFilters({
   onSearchChange,
 }: AuditLogFiltersProps) {
   return (
-    <div className="space-y-4 mb-6">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
       {/* Tabs de filtro */}
       <Tabs
         value={filter}
         onValueChange={(value) => onFilterChange(value as AuditLogFilter)}
+        className="shrink-0"
       >
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">Todas</TabsTrigger>
-          <TabsTrigger value="edit_role">Tipo</TabsTrigger>
-          <TabsTrigger value="reset_password">Senha</TabsTrigger>
-          <TabsTrigger value="activation">Ativação</TabsTrigger>
+        <TabsList className="h-9 bg-secondary/50">
+          <TabsTrigger value="all" className="text-xs">
+            Todas
+          </TabsTrigger>
+          <TabsTrigger value="edit_role" className="text-xs">
+            Tipo
+          </TabsTrigger>
+          <TabsTrigger value="reset_password" className="text-xs">
+            Senha
+          </TabsTrigger>
+          <TabsTrigger value="activation" className="text-xs">
+            Ativação
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
       {/* Input de busca */}
-      <div className="relative">
+      <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           type="text"
           placeholder="Buscar usuário por email..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10"
+          className="h-9 bg-secondary/50 pl-10"
         />
       </div>
     </div>

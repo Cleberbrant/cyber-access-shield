@@ -164,12 +164,18 @@ export default function UserManagementPage() {
 
         {/* Tabs: Usuários e Histórico */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsList className="mb-6 h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0">
+            <TabsTrigger
+              value="users"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
               <Users className="h-4 w-4" />
               Usuários
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
+            <TabsTrigger
+              value="history"
+              className="flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            >
               <FileText className="h-4 w-4" />
               Histórico de Alterações
             </TabsTrigger>

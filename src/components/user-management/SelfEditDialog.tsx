@@ -69,7 +69,9 @@ export function SelfEditDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Editar Minha Conta</DialogTitle>
+          <DialogTitle className="font-display">
+            Editar Minha Conta
+          </DialogTitle>
           <DialogDescription>
             Atualize suas informações pessoais
           </DialogDescription>

@@ -37,21 +37,21 @@ export function AuditLogsTab() {
       />
 
       {loading ? (
-        <Card>
+        <Card className="cyber-glass">
           <CardContent className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
             <span>Carregando histórico...</span>
           </CardContent>
         </Card>
       ) : logs.length === 0 ? (
-        <Card>
+        <Card className="cyber-glass">
           <CardContent className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">Nenhum registro encontrado</p>
           </CardContent>
         </Card>
       ) : (
         <>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {logs.map((log) => (
               <AuditLogCard key={log.id} log={log} />
             ))}

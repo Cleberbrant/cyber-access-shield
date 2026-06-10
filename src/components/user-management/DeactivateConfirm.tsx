@@ -28,7 +28,9 @@ export function DeactivateConfirm({
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>⚠️ Desativar Conta?</AlertDialogTitle>
+          <AlertDialogTitle className="font-display">
+            ⚠️ Desativar Conta?
+          </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>Você está prestes a desativar a conta:</p>
             <p className="font-semibold text-foreground">{userEmail}</p>

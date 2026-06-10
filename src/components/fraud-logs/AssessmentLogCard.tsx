@@ -10,23 +10,25 @@ interface AssessmentLogCardProps {
 
 export function AssessmentLogCard({ assessmentLogs }: AssessmentLogCardProps) {
   return (
-    <Card className="border-2 border-cyber-purple/20">
-      <CardHeader>
-        <div className="flex items-start justify-between">
+    <Card className="cyber-glass border-accent/20">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-cyber-purple" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+              <FileText className="h-5 w-5" />
+            </div>
             <div>
-              <CardTitle className="text-xl">
+              <CardTitle className="font-display text-lg">
                 {assessmentLogs.assessment_title}
               </CardTitle>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
+                  <Users className="h-3.5 w-3.5" />
                   {assessmentLogs.total_students_with_logs} aluno
                   {assessmentLogs.total_students_with_logs !== 1 ? "s" : ""}
                 </div>
                 <div className="flex items-center gap-1">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangle className="h-3.5 w-3.5" />
                   {assessmentLogs.total_violations} violações
                 </div>
               </div>
@@ -35,7 +37,7 @@ export function AssessmentLogCard({ assessmentLogs }: AssessmentLogCardProps) {
 
           <Badge
             variant="outline"
-            className="bg-destructive/10 text-destructive border-destructive/20"
+            className="shrink-0 bg-destructive/10 text-destructive border-destructive/20 font-mono text-xs"
           >
             {assessmentLogs.total_violations} eventos
           </Badge>
@@ -43,7 +45,7 @@ export function AssessmentLogCard({ assessmentLogs }: AssessmentLogCardProps) {
       </CardHeader>
 
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {assessmentLogs.students.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">
               Nenhum log de fraude registrado para esta avaliação.
