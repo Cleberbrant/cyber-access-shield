@@ -37,6 +37,10 @@ interface AuthFormProps {
   className?: string;
 }
 
+// Turnstile só roda em produção web (deploy). Em desenvolvimento (web ou
+// desktop) e no Electron empacotado, a validação de robô é dispensada.
+const skipTurnstile = isElectron() || import.meta.env.DEV;
+
 export function AuthForm({ type, className }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -255,8 +259,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
     e.preventDefault();
     setErrors({});
     if (!validateForm()) return;
-    // No desktop (Electron) o Turnstile é desabilitado — ambiente controlado
-    if (!isElectron() && !turnstileToken) {
+    if (!skipTurnstile && !turnstileToken) {
       setErrors({ form: "Confirme que você não é um robô antes de continuar." });
       return;
     }
@@ -317,7 +320,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
             />
           )}
 
-          {!isElectron() && (
+          {!skipTurnstile && (
             <TurnstileWidget
               onSuccess={(token) => setTurnstileToken(token)}
               onExpire={() => setTurnstileToken(null)}
