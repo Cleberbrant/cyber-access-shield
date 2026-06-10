@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Clock,
   Calendar,
@@ -70,54 +69,57 @@ export function AssessmentCard({
   const isExhausted = !isAdmin && available && !canAttempt;
 
   return (
-    <Card className="cyber-glass flex flex-col transition-all duration-300 hover:-translate-y-1 hover:glow-border">
+    <Card className="flex flex-col border-border bg-card transition-colors hover:border-primary/40">
       <CardHeader className="space-y-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg leading-snug">
-            {assessment.title}
-          </CardTitle>
+        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest">
           {isScheduled ? (
-            <Badge className="shrink-0 bg-accent/15 text-accent border-accent/30 hover:bg-accent/15">
-              Agendada
-            </Badge>
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="text-accent">Agendada</span>
+            </>
           ) : isExhausted ? (
-            <Badge className="shrink-0 bg-muted text-muted-foreground border-border hover:bg-muted">
-              Esgotada
-            </Badge>
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+              <span className="text-muted-foreground">Esgotada</span>
+            </>
           ) : (
-            <Badge className="shrink-0 bg-primary/15 text-primary border-primary/30 hover:bg-primary/15">
-              Disponível
-            </Badge>
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-slow" />
+              <span className="text-primary">Disponível</span>
+            </>
           )}
         </div>
+        <CardTitle className="font-display text-lg leading-snug tracking-tight">
+          {assessment.title}
+        </CardTitle>
         <CardDescription className="line-clamp-3">
           {assessment.description || "Sem descrição"}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1">
-        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 font-mono text-[11px] text-muted-foreground">
           <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-primary/70" />
-            {assessment.duration_minutes} minutos
+            <Clock className="h-3.5 w-3.5" />
+            {assessment.duration_minutes} min
           </div>
 
           {!isAdmin && maxAttempts > 0 && (
             <div className="flex items-center gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5 text-primary/70" />
-              Tentativas: {currentAttempts}/{maxAttempts}
+              <RotateCcw className="h-3.5 w-3.5" />
+              {currentAttempts}/{maxAttempts} tentativas
             </div>
           )}
 
           {!isAdmin && maxAttempts === 0 && (
             <div className="flex items-center gap-1.5">
-              <RotateCcw className="h-3.5 w-3.5 text-primary/70" />
-              Tentativas: Ilimitadas
+              <RotateCcw className="h-3.5 w-3.5" />
+              tentativas ilimitadas
             </div>
           )}
 
           <div className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-primary/70" />
-            Criada em {formatDate(assessment.created_at)}
+            <Calendar className="h-3.5 w-3.5" />
+            {formatDate(assessment.created_at)}
           </div>
         </div>
 
@@ -164,10 +166,7 @@ export function AssessmentCard({
 
             {/* Botão Iniciar/Continuar */}
             {available && canAttempt ? (
-              <Button
-                onClick={() => onStartAssessment(assessment.id)}
-                className="bg-gradient-brand text-white glow-primary hover:opacity-90 transition-opacity"
-              >
+              <Button onClick={() => onStartAssessment(assessment.id)}>
                 {assessment.hasIncompleteSession ? "Continuar" : "Iniciar"}
               </Button>
             ) : !available ? (

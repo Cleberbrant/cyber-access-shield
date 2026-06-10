@@ -7,15 +7,12 @@ import {
   ShieldCheck,
   Book,
   Lock,
-  Check,
-  CheckCircle2,
   Eye,
   Code2,
   Database,
   UserCheck,
   Camera,
   ScrollText,
-  AlertTriangle,
   Copy,
   Mouse,
   ArrowRight,
@@ -28,63 +25,54 @@ const features = [
     title: "Sessões Protegidas",
     description:
       "Validação contínua de sessão com tokens seguros e renovação automática, garantindo autenticidade durante toda a avaliação.",
-    span: true,
   },
   {
     icon: Copy,
     title: "Proteção Anti-Cópia",
     description:
       "Desativa atalhos de teclado (Ctrl+C, Ctrl+V, Ctrl+X) e menu de contexto, prevenindo cópia de questões e cola de respostas.",
-    span: false,
   },
   {
     icon: Eye,
     title: "Monitoramento de Foco",
     description:
       "Detecta quando o aluno muda de aba ou minimiza a janela, registrando tentativas de consulta externa durante a prova.",
-    span: false,
   },
   {
     icon: Code2,
     title: "Bloqueio de DevTools",
     description:
       "Impede abertura de ferramentas de desenvolvedor (F12, Ctrl+Shift+I) para evitar manipulação de código e respostas.",
-    span: false,
   },
   {
     icon: ShieldCheck,
     title: "Sanitização de Inputs",
     description:
       "Validação rigorosa de entradas para prevenir SQL Injection, XSS e outros ataques comuns de segurança web.",
-    span: false,
   },
   {
     icon: ScrollText,
     title: "Logs e Auditoria",
     description:
       "Sistema completo de registro de atividades suspeitas, permitindo análise posterior de tentativas de fraude.",
-    span: true,
   },
   {
     icon: Database,
     title: "Políticas de Acesso (RLS)",
     description:
       "Row Level Security no banco de dados garante isolamento total de dados entre usuários e perfis de acesso.",
-    span: false,
   },
   {
     icon: UserCheck,
     title: "Autenticação Robusta",
     description:
       "Sistema de autenticação seguro com validação de sessão contínua e proteção contra acesso não autorizado.",
-    span: false,
   },
   {
     icon: Camera,
     title: "Anti-Screenshot",
     description:
       "Proteção contra capturas de tela e impressão não autorizada das questões da avaliação.",
-    span: true,
   },
 ];
 
@@ -152,6 +140,12 @@ const steps = [
   },
 ];
 
+const heroChips = [
+  { label: "kiosk ativo", dot: "bg-cyber-teal", position: "left-0 top-12", delay: "0s" },
+  { label: "0 violações", dot: "bg-primary", position: "right-0 top-1/3", delay: "1.2s" },
+  { label: "monitor bloqueado", dot: "bg-accent", position: "bottom-16 left-6", delay: "2.4s" },
+];
+
 const linkedInIcon = (
   <svg
     className="h-4 w-4"
@@ -175,38 +169,38 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* ===== Sticky glass nav ===== */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+      {/* ===== Nav ===== */}
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/90 backdrop-blur">
+        <div className="container flex h-14 items-center justify-between">
           <a href="#top" className="flex items-center" aria-label="CyberAccessShield">
-            <Logo size={28} />
+            <Logo size={26} />
           </a>
-          <div className="flex items-center gap-4">
-            <nav className="hidden md:flex items-center gap-8">
+          <div className="flex items-center gap-3">
+            <nav className="hidden items-center gap-6 md:flex">
               <a
                 href="#features"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="text-sm lowercase text-muted-foreground transition-colors hover:text-foreground"
               >
-                Recursos
+                recursos
               </a>
               <a
                 href="#security"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="text-sm lowercase text-muted-foreground transition-colors hover:text-foreground"
               >
-                Segurança
+                segurança
               </a>
               <a
                 href="#about"
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+                className="text-sm lowercase text-muted-foreground transition-colors hover:text-foreground"
               >
-                Sobre
+                sobre
               </a>
             </nav>
             <ThemeToggle />
             <Button
-              variant="default"
+              size="sm"
               onClick={() => navigate("/login")}
-              className="cyber-button bg-gradient-brand text-white border-0 hover:opacity-90"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Entrar
             </Button>
@@ -216,141 +210,157 @@ export default function LandingPage() {
 
       <main id="top" className="flex-1">
         {/* ===== Hero ===== */}
-        <section className="relative overflow-hidden grid-pattern py-20 md:py-28 lg:py-32">
-          {/* Radial glows */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-cyber-blue opacity-20 blur-3xl animate-pulse-slow"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-40 -right-32 h-[30rem] w-[30rem] rounded-full bg-cyber-purple opacity-20 blur-3xl animate-pulse-slow"
-          />
-
-          <div className="container relative z-10">
-            <div className="mx-auto flex max-w-4xl flex-col items-center text-center space-y-8 animate-fade-in-up">
-              {/* Glass chips */}
-              <div className="flex flex-wrap justify-center gap-3">
-                <span className="cyber-glass rounded-full border border-primary/30 px-4 py-1.5 text-xs font-medium text-primary">
-                  Projeto TCC — UnB
-                </span>
-                <span className="cyber-glass rounded-full border border-cyber-teal/30 px-4 py-1.5 text-xs font-medium text-cyber-teal">
-                  Segurança Web
-                </span>
-                <span className="cyber-glass rounded-full border border-accent/30 px-4 py-1.5 text-xs font-medium text-accent">
-                  Anti-Fraude
-                </span>
-              </div>
-
-              <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+        <section className="relative overflow-hidden border-b border-border grid-pattern">
+          <div className="container relative z-10 grid items-center gap-12 py-20 md:py-28 lg:grid-cols-[1.1fr_1fr] lg:gap-8">
+            {/* Left: copy */}
+            <div className="animate-fade-up">
+              <p className="font-mono text-xs tracking-widest text-primary">
+                {"// PLATAFORMA DE AVALIAÇÃO SEGURA"}
+              </p>
+              <h1 className="mt-6 font-display text-5xl font-bold tracking-tighter md:text-6xl">
                 Avaliações online{" "}
                 <span className="cyber-text-gradient">seguras</span> para o
                 ensino a distância
               </h1>
-
-              <p className="max-w-2xl text-muted-foreground md:text-lg lg:text-xl">
-                Plataforma desenvolvida com foco total em segurança web e
-                integridade acadêmica, protegendo contra fraudes e garantindo
-                avaliações confiáveis.
+              <p className="mt-5 max-w-xl text-muted-foreground md:text-lg">
+                Segurança web e integridade acadêmica, do navegador ao banco de
+                dados.
               </p>
-
-              <div className="flex flex-col gap-4 pt-2 sm:flex-row">
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button
                   size="lg"
                   onClick={() => navigate("/register")}
-                  className="cyber-button glow-primary bg-gradient-brand text-white border-0 hover:opacity-90"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Começar agora
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => navigate("/login")}
-                  className="border-border bg-background/40 backdrop-blur hover:bg-card"
-                >
-                  Já tenho uma conta
+                <Button variant="ghost" size="lg" asChild>
+                  <a href="#features">
+                    Ver recursos
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </a>
                 </Button>
               </div>
+              <p className="mt-10 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                RLS Postgres · Kiosk Desktop · Logs em tempo real
+              </p>
             </div>
 
-            {/* Product mockup frame */}
-            <div className="mx-auto mt-16 max-w-4xl animate-fade-in-up delay-200">
-              <div className="cyber-glass glow-border overflow-hidden rounded-xl">
-                {/* Browser chrome */}
-                <div className="flex items-center gap-3 border-b border-border/60 bg-cyber-dark-accent/60 px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <span className="h-3 w-3 rounded-full bg-destructive/70" />
-                    <span className="h-3 w-3 rounded-full bg-yellow-400/70" />
-                    <span className="h-3 w-3 rounded-full bg-cyber-teal/70" />
+            {/* Right: brand composition */}
+            <div className="relative hidden h-[480px] items-center justify-center lg:flex">
+              {/* Single subtle glow */}
+              <div
+                aria-hidden="true"
+                className="absolute h-80 w-80 rounded-full bg-primary/10 blur-3xl"
+              />
+              {/* Concentric hairline rings */}
+              <div
+                aria-hidden="true"
+                className="absolute h-[400px] w-[400px] rounded-full border border-primary/10"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute h-[480px] w-[480px] rounded-full border border-primary/10"
+              />
+              <div
+                aria-hidden="true"
+                className="absolute h-[560px] w-[560px] rounded-full border border-primary/5"
+              />
+              <LogoMark size={320} />
+              {/* Floating product callouts */}
+              {heroChips.map((chip) => (
+                <span
+                  key={chip.label}
+                  className={`animate-float absolute ${chip.position} flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 font-mono text-[11px] text-muted-foreground shadow-sm`}
+                  style={{ animationDelay: chip.delay }}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${chip.dot}`} />
+                  {chip.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ===== Product shot ===== */}
+        <section className="relative py-16 md:py-20">
+          <div className="container relative">
+            {/* One subtle glow under the frame */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-16 -bottom-4 h-24 bg-primary opacity-10 blur-3xl"
+            />
+            <div className="relative overflow-hidden rounded-xl border border-border bg-card animate-fade-up">
+              {/* Minimal chrome */}
+              <div className="flex items-center border-b border-border px-4 py-2.5">
+                <span className="font-mono text-xs text-muted-foreground">
+                  app.cyberaccessshield.com
+                </span>
+              </div>
+
+              {/* Abstract dashboard */}
+              <div className="grid gap-4 p-4 md:grid-cols-[180px_1fr] md:p-6">
+                {/* Sidebar */}
+                <div className="hidden flex-col gap-3 rounded-lg border border-border bg-background p-4 md:flex">
+                  <div className="flex items-center gap-2">
+                    <LogoMark size={18} />
+                    <div className="h-2 w-16 rounded bg-muted" />
                   </div>
-                  <div className="flex-1 rounded-md border border-border/60 bg-background/60 px-3 py-1 text-center">
-                    <span className="font-mono text-xs text-muted-foreground">
-                      app.cyberaccessshield.com
-                    </span>
-                  </div>
+                  <div className="mt-2 h-2 w-full rounded bg-primary/40" />
+                  <div className="h-2 w-3/4 rounded bg-muted" />
+                  <div className="h-2 w-5/6 rounded bg-muted" />
+                  <div className="h-2 w-2/3 rounded bg-muted" />
                 </div>
 
-                {/* Abstract dashboard */}
-                <div className="grid gap-4 bg-background/40 p-4 md:grid-cols-[180px_1fr] md:p-6">
-                  {/* Sidebar */}
-                  <div className="hidden flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-4 md:flex">
-                    <div className="flex items-center gap-2">
-                      <LogoMark size={18} />
-                      <div className="h-2 w-16 rounded bg-muted" />
-                    </div>
-                    <div className="mt-2 h-2 w-full rounded bg-primary/40" />
-                    <div className="h-2 w-3/4 rounded bg-muted" />
-                    <div className="h-2 w-5/6 rounded bg-muted" />
-                    <div className="h-2 w-2/3 rounded bg-muted" />
+                {/* Main panel */}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-4 font-mono text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cyber-teal" />
+                      proteções ativas
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      sessão validada
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                      RLS habilitado
+                    </span>
                   </div>
 
-                  {/* Main panel */}
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-cyber-teal/40 bg-cyber-teal/10 px-3 py-1 font-mono text-[10px] text-cyber-teal">
-                        ● proteções ativas
-                      </span>
-                      <span className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-mono text-[10px] text-primary">
-                        sessão validada
-                      </span>
-                      <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 font-mono text-[10px] text-accent">
-                        RLS habilitado
-                      </span>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      {[
-                        { label: "Proteção Frontend", width: "w-full" },
-                        { label: "Controles de Acesso", width: "w-11/12" },
-                        { label: "Segurança de Dados", width: "w-full" },
-                      ].map((item) => (
-                        <div
-                          key={item.label}
-                          className="rounded-lg border border-border/60 bg-card/60 p-4"
-                        >
-                          <p className="mb-3 text-xs text-muted-foreground">
-                            {item.label}
-                          </p>
-                          <div className="h-2 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className={`h-2 rounded-full bg-gradient-brand ${item.width}`}
-                            />
-                          </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    {[
+                      { label: "Proteção Frontend", width: "w-full" },
+                      { label: "Controles de Acesso", width: "w-11/12" },
+                      { label: "Segurança de Dados", width: "w-full" },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-lg border border-border bg-background p-4"
+                      >
+                        <p className="mb-3 text-xs text-muted-foreground">
+                          {item.label}
+                        </p>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-2 rounded-full bg-primary ${item.width}`}
+                          />
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                  </div>
 
-                    <div className="rounded-lg border border-border/60 bg-card/60 p-4">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="h-2 w-24 rounded bg-muted" />
-                        <Shield className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="space-y-2">
-                        <div className="h-2 w-full rounded bg-muted" />
-                        <div className="h-2 w-4/5 rounded bg-muted" />
-                        <div className="h-2 w-2/3 rounded bg-primary/30" />
-                      </div>
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="h-2 w-24 rounded bg-muted" />
+                      <Shield className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-2 w-full rounded bg-muted" />
+                      <div className="h-2 w-4/5 rounded bg-muted" />
+                      <div className="h-2 w-2/3 rounded bg-primary/30" />
                     </div>
                   </div>
                 </div>
@@ -360,104 +370,91 @@ export default function LandingPage() {
         </section>
 
         {/* ===== Stack strip ===== */}
-        <section className="border-y border-border/60 bg-cyber-dark-accent/30 py-8">
+        <section className="border-y border-border py-5">
           <div className="container">
-            <p className="mb-4 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              Construído com tecnologias modernas
+            <p className="text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              {stackChips.join(" · ")}
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {stackChips.map((chip) => (
-                <span
-                  key={chip}
-                  className="cyber-glass rounded-full border border-border/60 px-4 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
           </div>
         </section>
 
-        {/* ===== Features (bento) ===== */}
-        <section id="features" className="relative py-20 md:py-28">
+        {/* ===== Features (hairline grid) ===== */}
+        <section id="features" className="py-20 md:py-28">
           <div className="container">
-            <div className="mb-14 flex flex-col items-center text-center">
-              <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 font-mono text-xs text-primary">
-                Recursos
-              </span>
-              <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                Segurança e integridade{" "}
-                <span className="cyber-text-gradient">em cada camada</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground md:text-lg">
+            <div className="mb-12 grid gap-6 animate-fade-up lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <span className="font-mono text-xs tracking-widest text-primary">
+                  01 — RECURSOS
+                </span>
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  Segurança e integridade em cada camada
+                </h2>
+              </div>
+              <p className="max-w-sm text-sm text-muted-foreground lg:text-right">
                 Proteção abrangente que combina segurança web moderna com
-                controles específicos para ambientes avaliativos
+                controles específicos para ambientes avaliativos.
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
-              {features.map((feature, index) => {
-                const Icon = feature.icon;
-                const delay =
-                  index % 3 === 1
-                    ? "delay-100"
-                    : index % 3 === 2
-                      ? "delay-200"
-                      : "";
-                return (
-                  <div
-                    key={feature.title}
-                    className={`cyber-glass group rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 hover:glow-border animate-fade-up ${delay} ${
-                      feature.span ? "md:col-span-2" : ""
-                    }`}
-                  >
-                    <div className="mb-4 inline-flex rounded-lg bg-gradient-brand p-[1px]">
-                      <div className="rounded-lg bg-card/90 p-2.5">
-                        <Icon className="h-5 w-5 text-primary transition-colors group-hover:text-accent" />
-                      </div>
+            <div className="overflow-hidden rounded-xl border border-border">
+              <div className="grid md:grid-cols-3">
+                {features.map((feature, index) => {
+                  const Icon = feature.icon;
+                  const isLast = index === features.length - 1;
+                  const isLastCol = index % 3 === 2;
+                  const isLastRow = index >= features.length - 3;
+                  return (
+                    <div
+                      key={feature.title}
+                      className={`border-border p-8 ${isLast ? "" : "border-b"} ${
+                        isLastRow ? "md:border-b-0" : ""
+                      } ${isLastCol ? "" : "md:border-r"}`}
+                    >
+                      <Icon className="h-5 w-5 text-primary" />
+                      <h3 className="mt-4 text-base font-medium">
+                        {feature.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {feature.description}
+                      </p>
                     </div>
-                    <h3 className="mb-2 font-display text-lg font-bold">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {feature.description}
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ===== Security section ===== */}
+        {/* ===== Security ===== */}
         <section
           id="security"
-          className="relative overflow-hidden border-y border-border/60 bg-cyber-dark-accent/30 py-20 md:py-28"
+          className="relative overflow-hidden border-y border-border py-20 md:py-28"
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-cyber-purple opacity-10 blur-3xl"
+            className="pointer-events-none absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-accent opacity-10 blur-3xl"
           />
           <div className="container relative z-10">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
               {/* Checklist */}
-              <div className="flex flex-col justify-center space-y-6">
-                <span className="w-fit rounded-full border border-accent/30 bg-accent/10 px-4 py-1 font-mono text-xs text-accent">
-                  Segurança
+              <div className="flex flex-col justify-center animate-fade-up">
+                <span className="font-mono text-xs tracking-widest text-primary">
+                  02 — SEGURANÇA
                 </span>
-                <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                  Arquitetura de segurança{" "}
-                  <span className="cyber-text-gradient">multicamadas</span>
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  Arquitetura de segurança multicamadas
                 </h2>
-                <p className="text-muted-foreground md:text-lg">
+                <p className="mt-4 text-muted-foreground">
                   Nossa plataforma implementa múltiplas camadas de proteção,
                   desde o frontend até o banco de dados, garantindo segurança
                   web completa.
                 </p>
-                <ul className="space-y-4">
-                  {securityChecklist.map((item) => (
-                    <li key={item.title} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <ul className="mt-8 space-y-5">
+                  {securityChecklist.map((item, index) => (
+                    <li key={item.title} className="flex items-start gap-4">
+                      <span className="mt-0.5 font-mono text-xs text-primary">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                       <div>
                         <strong className="text-foreground">
                           {item.title}:
@@ -471,57 +468,40 @@ export default function LandingPage() {
                 </ul>
               </div>
 
-              {/* Live status panel */}
+              {/* Status panel */}
               <div className="flex items-center justify-center">
-                <div className="cyber-glass glow-border w-full max-w-md rounded-xl p-8 animate-float">
+                <div className="w-full max-w-md rounded-xl border border-border bg-card p-8">
                   <div className="mb-6 flex items-center justify-between">
                     <h3 className="font-display text-xl font-bold">
                       Status de Segurança
                     </h3>
-                    <span className="relative flex h-3 w-3">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyber-teal opacity-60" />
-                      <span className="relative inline-flex h-3 w-3 rounded-full bg-cyber-teal" />
-                    </span>
+                    <span className="h-2 w-2 rounded-full bg-cyber-teal" />
                   </div>
 
                   <div className="space-y-5">
                     {[
-                      { label: "Proteção Frontend", value: "100%", delay: "" },
-                      {
-                        label: "Controles de Acesso",
-                        value: "100%",
-                        delay: "delay-100",
-                      },
-                      {
-                        label: "Segurança de Dados",
-                        value: "100%",
-                        delay: "delay-200",
-                      },
-                      {
-                        label: "Auditoria e Logs",
-                        value: "Ativo",
-                        delay: "delay-300",
-                      },
+                      { label: "Proteção Frontend", value: "100%" },
+                      { label: "Controles de Acesso", value: "100%" },
+                      { label: "Segurança de Dados", value: "100%" },
+                      { label: "Auditoria e Logs", value: "Ativo" },
                     ].map((row) => (
                       <div key={row.label} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">
                             {row.label}
                           </span>
-                          <span className="font-mono text-sm font-bold text-cyber-teal">
+                          <span className="font-mono text-sm text-cyber-teal">
                             {row.value}
                           </span>
                         </div>
-                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className={`h-1.5 w-full rounded-full bg-gradient-brand transition-all duration-1000 ${row.delay}`}
-                          />
+                        <div className="h-1 overflow-hidden rounded-full bg-muted">
+                          <div className="h-1 w-full rounded-full bg-primary" />
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-6 border-t border-border/60 pt-4">
+                  <div className="mt-6 border-t border-border pt-4">
                     <div className="flex items-center gap-2 text-sm">
                       <Shield className="h-4 w-4 text-cyber-teal" />
                       <span className="font-mono text-xs text-muted-foreground">
@@ -538,35 +518,27 @@ export default function LandingPage() {
         {/* ===== Demo interativa (terminal) ===== */}
         <section className="py-20 md:py-28">
           <div className="container">
-            <div className="mb-14 flex flex-col items-center text-center">
-              <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 font-mono text-xs text-primary">
-                Demo interativa
-              </span>
-              <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                Veja as proteções{" "}
-                <span className="cyber-text-gradient">em ação</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-muted-foreground md:text-lg">
+            <div className="mb-12 grid gap-6 animate-fade-up lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <span className="font-mono text-xs tracking-widest text-primary">
+                  03 — DEMO INTERATIVA
+                </span>
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  Veja as proteções em ação
+                </h2>
+              </div>
+              <p className="max-w-sm text-sm text-muted-foreground lg:text-right">
                 Teste as proteções de segurança diretamente nesta demo
-                interativa
+                interativa.
               </p>
             </div>
 
             <div className="mx-auto max-w-5xl">
-              <div className="cyber-glass overflow-hidden rounded-xl">
+              <div className="overflow-hidden rounded-xl border border-border bg-card">
                 {/* Terminal header */}
-                <div className="flex items-center gap-3 border-b border-border/60 bg-cyber-dark-accent/60 px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <span className="h-3 w-3 rounded-full bg-destructive/70" />
-                    <span className="h-3 w-3 rounded-full bg-yellow-400/70" />
-                    <span className="h-3 w-3 rounded-full bg-cyber-teal/70" />
-                  </div>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    monitor de segurança — ao vivo
-                  </span>
-                  <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-cyber-teal">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyber-teal" />
-                    LIVE
+                <div className="flex items-center border-b border-border px-4 py-2.5">
+                  <span className="font-mono text-xs lowercase text-muted-foreground">
+                    ~/cyber-access-shield/security-monitor
                   </span>
                 </div>
 
@@ -575,7 +547,7 @@ export default function LandingPage() {
                   <div className="space-y-6">
                     <section
                       aria-label="Zona de teste de proteção contra cópia"
-                      className="glow-border relative min-h-[200px] rounded-lg bg-background/40 p-6"
+                      className="relative min-h-[200px] rounded-lg border border-border bg-background p-6"
                       onCopy={(e) => {
                         e.preventDefault();
                         setDemoAttempts((prev) => ({
@@ -602,16 +574,15 @@ export default function LandingPage() {
                         impedirá que você copie este conteúdo ou utilize o menu
                         de contexto (botão direito).
                       </p>
-                      <div className="rounded-md border border-border/60 bg-card/60 p-4">
+                      <div className="rounded-md border border-border bg-card p-4">
                         <p className="font-mono text-sm">
                           Questão de Exemplo: Qual é a importância da segurança
                           em avaliações online?
                         </p>
                       </div>
-                      <AlertTriangle className="absolute right-4 top-4 h-4 w-4 text-yellow-400/60" />
                     </section>
 
-                    <div className="rounded-lg border border-border/60 bg-card/40 p-6">
+                    <div className="rounded-lg border border-border bg-background p-6">
                       <div className="mb-4 flex items-center gap-2">
                         <Mouse className="h-5 w-5 text-cyber-teal" />
                         <span className="font-medium">
@@ -640,7 +611,7 @@ export default function LandingPage() {
 
                   {/* Terminal log */}
                   <div className="space-y-4">
-                    <div className="rounded-lg border border-border/60 bg-cyber-dark/80 p-6 font-mono text-xs">
+                    <div className="rounded-lg border border-border bg-background p-6 font-mono text-xs">
                       <h4 className="mb-4 flex items-center gap-2 font-display text-sm font-bold">
                         <Shield className="h-4 w-4 text-primary" />
                         Tentativas Detectadas
@@ -654,7 +625,7 @@ export default function LandingPage() {
                           [OK]&nbsp;&nbsp;&nbsp;&nbsp;proteções de cópia e
                           contexto ativas
                         </p>
-                        <div className="flex items-center justify-between rounded bg-card/60 px-3 py-2">
+                        <div className="flex items-center justify-between rounded bg-card px-3 py-2">
                           <span className="text-yellow-400">
                             [WARN]&nbsp;&nbsp;tentativas de cópia
                           </span>
@@ -662,7 +633,7 @@ export default function LandingPage() {
                             ×{demoAttempts.copy}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between rounded bg-card/60 px-3 py-2">
+                        <div className="flex items-center justify-between rounded bg-card px-3 py-2">
                           <span className="text-yellow-400">
                             [WARN]&nbsp;&nbsp;cliques com botão direito
                           </span>
@@ -670,7 +641,7 @@ export default function LandingPage() {
                             ×{demoAttempts.rightClick}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between rounded bg-card/60 px-3 py-2">
+                        <div className="flex items-center justify-between rounded bg-card px-3 py-2">
                           <span className="text-destructive">
                             [ALERT]&nbsp;total de violações
                           </span>
@@ -684,7 +655,7 @@ export default function LandingPage() {
                         </p>
                       </div>
 
-                      <div className="mt-5 border-t border-border/60 pt-4">
+                      <div className="mt-5 border-t border-border pt-4">
                         <p className="text-[11px] leading-relaxed text-muted-foreground">
                           Em uma avaliação real, todas essas tentativas seriam
                           registradas no log de segurança e disponibilizadas ao
@@ -693,7 +664,7 @@ export default function LandingPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                    <div className="rounded-lg border border-border bg-background p-4">
                       <p className="text-xs leading-relaxed text-muted-foreground">
                         <strong className="text-foreground">Nota:</strong> Esta
                         é apenas uma demonstração simplificada. Durante uma
@@ -710,37 +681,38 @@ export default function LandingPage() {
         </section>
 
         {/* ===== Como funciona ===== */}
-        <section className="border-y border-border/60 bg-cyber-dark-accent/30 py-20 md:py-28">
+        <section className="border-y border-border py-20 md:py-28">
           <div className="container">
-            <div className="mb-14 flex flex-col items-center text-center">
-              <span className="mb-4 rounded-full border border-accent/30 bg-accent/10 px-4 py-1 font-mono text-xs text-accent">
-                Como funciona
+            <div className="mb-14 animate-fade-up">
+              <span className="font-mono text-xs tracking-widest text-primary">
+                04 — COMO FUNCIONA
               </span>
-              <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                Da criação ao resultado{" "}
-                <span className="cyber-text-gradient">em três passos</span>
+              <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                Da criação ao resultado em três passos
               </h2>
             </div>
 
-            <div className="relative mx-auto grid max-w-5xl gap-10 md:grid-cols-3 md:gap-8">
-              {/* Connecting line */}
-              <div
-                aria-hidden="true"
-                className="absolute left-0 right-0 top-8 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block"
-              />
-              {steps.map((step) => (
-                <div key={step.number} className="relative text-center md:text-left">
-                  <div className="relative z-10 mb-5 inline-flex">
-                    <span className="cyber-glass cyber-text-gradient rounded-xl px-4 py-2 font-display text-3xl font-bold">
-                      {step.number}
-                    </span>
+            <div className="max-w-3xl">
+              {steps.map((step, index) => (
+                <div
+                  key={step.number}
+                  className="grid grid-cols-[4.5rem_1fr] gap-6 md:grid-cols-[7rem_1fr] md:gap-10"
+                >
+                  <span className="select-none font-display text-6xl font-bold leading-none text-secondary md:text-7xl">
+                    {step.number}
+                  </span>
+                  <div
+                    className={`border-l border-border pl-6 md:pl-10 ${
+                      index === steps.length - 1 ? "pb-2" : "pb-14"
+                    }`}
+                  >
+                    <h3 className="font-display text-lg font-bold">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {step.description}
+                    </p>
                   </div>
-                  <h3 className="mb-2 font-display text-lg font-bold">
-                    {step.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {step.description}
-                  </p>
                 </div>
               ))}
             </div>
@@ -750,39 +722,31 @@ export default function LandingPage() {
         {/* ===== Sobre ===== */}
         <section id="about" className="py-20 md:py-28">
           <div className="container">
-            <div className="mx-auto max-w-4xl">
-              <div className="mb-14 flex flex-col items-center text-center">
-                <span className="mb-4 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 font-mono text-xs text-primary">
-                  Sobre
+            <div className="mb-12 grid gap-6 animate-fade-up lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <span className="font-mono text-xs tracking-widest text-primary">
+                  05 — SOBRE
                 </span>
-                <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
-                  Sobre o <span className="cyber-text-gradient">projeto</span>
+                <h2 className="mt-3 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  Sobre o projeto
                 </h2>
-                <p className="mx-auto mt-4 max-w-2xl text-muted-foreground md:text-lg">
-                  Trabalho de Conclusão de Curso focado em segurança web
-                  aplicada a ambientes de avaliação online
-                </p>
               </div>
+              <p className="max-w-sm text-sm text-muted-foreground lg:text-right">
+                Trabalho de Conclusão de Curso focado em segurança web aplicada
+                a ambientes de avaliação online.
+              </p>
+            </div>
 
-              <div className="mb-10 grid gap-6 md:grid-cols-2">
+            <div className="overflow-hidden rounded-xl border border-border">
+              <div className="grid md:grid-cols-2">
                 {/* Instituição */}
-                <div className="cyber-glass rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 hover:glow-border">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="inline-flex rounded-lg bg-gradient-brand p-[1px]">
-                      <div className="rounded-lg bg-card/90 p-2.5">
-                        <Book className="h-5 w-5 text-primary" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-display text-lg font-bold">
-                        Instituição
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Universidade de Brasília
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                <div className="border-b border-border p-8 md:border-b-0 md:border-r">
+                  <Book className="h-5 w-5 text-primary" />
+                  <h3 className="mt-4 text-base font-medium">Instituição</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Universidade de Brasília
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     Projeto desenvolvido como Trabalho de Conclusão de Curso
                     (TCC) em Engenharia de Software na UnB, aplicando conceitos
                     avançados de segurança web e proteção de dados em ambientes
@@ -791,23 +755,13 @@ export default function LandingPage() {
                 </div>
 
                 {/* Objetivo */}
-                <div className="cyber-glass rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 hover:glow-border">
-                  <div className="mb-4 flex items-center gap-3">
-                    <div className="inline-flex rounded-lg bg-gradient-brand p-[1px]">
-                      <div className="rounded-lg bg-card/90 p-2.5">
-                        <Shield className="h-5 w-5 text-accent" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="font-display text-lg font-bold">
-                        Objetivo
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Segurança & Integridade
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                <div className="p-8">
+                  <Shield className="h-5 w-5 text-accent" />
+                  <h3 className="mt-4 text-base font-medium">Objetivo</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Segurança & Integridade
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                     Desenvolver uma plataforma robusta que garanta a integridade
                     de avaliações online através de múltiplas camadas de
                     segurança, desde o frontend até o banco de dados, prevenindo
@@ -815,66 +769,76 @@ export default function LandingPage() {
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Diferenciais */}
-              <div className="cyber-glass mb-12 rounded-xl p-8">
-                <h3 className="mb-6 text-center font-display text-xl font-bold">
-                  Diferenciais do Projeto
-                </h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  {[
-                    {
-                      title: "Segurança Multicamadas",
-                      description:
-                        "Proteção em todos os níveis: frontend, backend e banco de dados",
-                    },
-                    {
-                      title: "Controles Específicos para EAD",
-                      description:
-                        "Proteções customizadas para ambiente de avaliação online",
-                    },
-                    {
-                      title: "Auditoria Completa",
-                      description:
-                        "Sistema de logs que registra todas as atividades suspeitas",
-                    },
-                    {
-                      title: "Foco em Integridade",
-                      description:
-                        "Garantia de autenticidade e confiabilidade das avaliações",
-                    },
-                  ].map((item) => (
-                    <div key={item.title} className="flex gap-3">
-                      <Check className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                      <div>
-                        <h4 className="mb-1 font-semibold">{item.title}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-                      </div>
+            {/* Diferenciais */}
+            <div className="mt-12">
+              <h3 className="font-display text-xl font-bold">
+                Diferenciais do Projeto
+              </h3>
+              <div className="mt-6 grid gap-x-12 gap-y-6 md:grid-cols-2">
+                {[
+                  {
+                    title: "Segurança Multicamadas",
+                    description:
+                      "Proteção em todos os níveis: frontend, backend e banco de dados",
+                  },
+                  {
+                    title: "Controles Específicos para EAD",
+                    description:
+                      "Proteções customizadas para ambiente de avaliação online",
+                  },
+                  {
+                    title: "Auditoria Completa",
+                    description:
+                      "Sistema de logs que registra todas as atividades suspeitas",
+                  },
+                  {
+                    title: "Foco em Integridade",
+                    description:
+                      "Garantia de autenticidade e confiabilidade das avaliações",
+                  },
+                ].map((item, index) => (
+                  <div key={item.title} className="flex gap-4">
+                    <span className="mt-0.5 font-mono text-xs text-primary">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div>
+                      <h4 className="mb-1 font-medium">{item.title}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {item.description}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              <div className="text-center">
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/register")}
-                  className="cyber-button glow-primary bg-gradient-brand text-white border-0 hover:opacity-90"
-                >
-                  Experimente a Plataforma
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
+            {/* Final CTA */}
+            <div className="mt-16 border-t border-border pt-12">
+              <h3 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                Pronto para avaliações{" "}
+                <span className="cyber-text-gradient">confiáveis</span>?
+              </h3>
+              <p className="mt-3 max-w-xl text-muted-foreground">
+                Crie sua conta e configure a primeira prova protegida em
+                minutos.
+              </p>
+              <Button
+                size="lg"
+                onClick={() => navigate("/register")}
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Experimente a Plataforma
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </section>
       </main>
 
       {/* ===== Footer ===== */}
-      <div className="h-px bg-gradient-brand" />
-      <footer className="bg-cyber-dark">
+      <footer className="border-t border-border">
         <div className="container py-12">
           <div className="mb-8 grid gap-8 md:grid-cols-3">
             {/* Marca */}
@@ -894,25 +858,25 @@ export default function LandingPage() {
               <nav className="flex flex-col gap-2">
                 <a
                   href="#features"
-                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Recursos
                 </a>
                 <a
                   href="#security"
-                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Segurança
                 </a>
                 <a
                   href="#about"
-                  className="text-sm text-muted-foreground transition-colors hover:text-primary"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Sobre
                 </a>
                 <button
                   onClick={() => navigate("/login")}
-                  className="text-left text-sm text-muted-foreground transition-colors hover:text-primary"
+                  className="text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Login
                 </button>
@@ -932,7 +896,7 @@ export default function LandingPage() {
                       href="https://www.linkedin.com/in/cleberbrant/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
+                      className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {linkedInIcon}
                       LinkedIn
@@ -946,7 +910,7 @@ export default function LandingPage() {
                       href="https://www.linkedin.com/in/pedro-prp/"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
+                      className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {linkedInIcon}
                       LinkedIn
@@ -958,7 +922,7 @@ export default function LandingPage() {
           </div>
 
           {/* Linha inferior */}
-          <div className="flex flex-col gap-4 border-t border-border/60 pt-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 border-t border-border pt-8 md:flex-row md:items-center md:justify-between">
             <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} CyberAccessShield. Todos os
               direitos reservados.
@@ -968,7 +932,7 @@ export default function LandingPage() {
                 href="https://github.com/Cleberbrant/cyber-access-shield"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 <svg
                   className="h-4 w-4"
@@ -986,6 +950,13 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Ghost wordmark */}
+        <div className="overflow-hidden" aria-hidden="true">
+          <span className="block whitespace-nowrap text-center font-display text-[12vw] font-bold leading-none text-foreground/[0.03] select-none">
+            CyberAccessShield
+          </span>
         </div>
       </footer>
     </div>

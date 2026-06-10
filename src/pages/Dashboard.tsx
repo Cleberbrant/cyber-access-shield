@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  Shield,
-  Users,
-  FileText,
-  CheckCircle2,
-  CalendarClock,
-} from "lucide-react";
+import { Plus, Shield, Users } from "lucide-react";
 import { useAssessments } from "@/hooks/useAssessments";
 import { useAssessmentDeletion } from "@/hooks/useAssessmentDeletion";
 import { AssessmentsList } from "@/components/dashboard/AssessmentsList";
@@ -254,79 +247,78 @@ export default function Dashboard() {
   return (
     <SecureAppShell>
       <div className="container py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 animate-fade-up">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight font-display">
-              Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {isUserAdmin
-                ? "Gerencie e crie avaliações seguras para seus alunos."
-                : "Participe de avaliações e acompanhe seu desempenho."}
-            </p>
-          </div>
-
-          {isUserAdmin && (
-            <div className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={() => navigate("/fraud-logs")}>
-                <Shield className="mr-2 h-4 w-4" />
-                Logs
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/user-management")}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Usuários
-              </Button>
-              <Button
-                onClick={() => navigate("/create-assessment")}
-                className="bg-gradient-brand text-white glow-primary hover:opacity-90 transition-opacity"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Avaliação
-              </Button>
+        <div className="mb-10 animate-fade-up">
+          <p className="font-mono text-xs uppercase tracking-widest text-primary mb-2">
+            {isUserAdmin ? "// painel do administrador" : "// painel do aluno"}
+          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tighter">
+                Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {isUserAdmin
+                  ? "Gerencie e crie avaliações seguras para seus alunos."
+                  : "Participe de avaliações e acompanhe seu desempenho."}
+              </p>
             </div>
-          )}
+
+            {isUserAdmin && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => navigate("/fraud-logs")}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Logs
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => navigate("/user-management")}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuários
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/create-assessment")}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Avaliação
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {isUserAdmin && !loading && (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8 animate-fade-up">
-            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+          <div className="mb-10 overflow-hidden rounded-xl border border-border animate-fade-up">
+            <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   Total de avaliações
                 </p>
-                <p className="font-display text-2xl font-bold">
+                <p className="font-display text-3xl font-bold tracking-tight mt-1">
                   {totalAssessments}
                 </p>
               </div>
-            </div>
-            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                <CheckCircle2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   Disponíveis agora
                 </p>
-                <p className="font-display text-2xl font-bold">
+                <p className="font-display text-3xl font-bold tracking-tight mt-1 text-primary">
                   {availableNowCount}
                 </p>
               </div>
-            </div>
-            <div className="cyber-glass rounded-xl p-5 flex items-center gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent/15 text-accent">
-                <CalendarClock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   Agendadas
                 </p>
-                <p className="font-display text-2xl font-bold">
+                <p className="font-display text-3xl font-bold tracking-tight mt-1">
                   {scheduledCount}
                 </p>
               </div>
