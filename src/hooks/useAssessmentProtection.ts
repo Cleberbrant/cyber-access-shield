@@ -99,12 +99,10 @@ export function useAssessmentProtection() {
   useEffect(() => {
     if (!isElectron() || !shouldDetectBlur) return;
     const unsubscribe = window.electronAPI?.onSecurityEvent((event) => {
-      const type =
-        event.type === "WINDOW_BLUR_ELECTRON"
-          ? SecurityEventType.WINDOW_BLUR
-          : SecurityEventType.KEYBOARD_SHORTCUT;
+      // Blur é contado E logado pelo useWindowBlurProtection (violação 3-strikes)
+      if (event.type === "WINDOW_BLUR_ELECTRON") return;
       logSecurityEvent({
-        type,
+        type: SecurityEventType.KEYBOARD_SHORTCUT,
         timestamp: new Date().toISOString(),
         details: `electron:${event.type}${event.details ? `:${event.details}` : ""}`,
         assessmentId,
