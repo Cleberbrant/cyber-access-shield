@@ -14,7 +14,6 @@ export interface User {
   temp_password: string | null; // Senha temporária (se resetada)
   temp_password_created_at: string | null; // Quando foi resetada
   created_at: string;
-  last_sign_in_at: string | null;
   confirmed_at: string | null;
 }
 

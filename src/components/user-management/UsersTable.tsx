@@ -56,9 +56,6 @@ export function UsersTable({
                 Criado em
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Último Acesso
-              </th>
-              <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Ações
               </th>
             </tr>
