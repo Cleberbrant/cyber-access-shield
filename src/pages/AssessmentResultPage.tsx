@@ -24,6 +24,7 @@ import { Json } from "@/integrations/supabase/types";
 import { ResultQuestionRenderer } from "@/components/assessment/ResultQuestionRenderer";
 import { useToast } from "@/hooks/use-toast";
 import { canAttemptAssessment } from "@/utils/assessment-attempts";
+import { resolveMaxAttempts } from "@/utils/assessment-utils";
 
 interface AssessmentResult {
   id: string;
@@ -221,14 +222,14 @@ setResult({
           cancellationReason: sessionData.cancellation_reason || undefined,
           warningCount: sessionData.warning_count || 0,
           attemptNumber,
-          maxAttempts: assessmentData.max_attempts ?? 1, // 0 = ilimitadas
+          maxAttempts: resolveMaxAttempts(assessmentData.max_attempts),
           questionsResults,
         });
         // Verificar se o usuário pode refazer a avaliação
         const attemptCheck = await canAttemptAssessment(
           user.id,
           assessmentId,
-          assessmentData.max_attempts ?? 1
+          resolveMaxAttempts(assessmentData.max_attempts)
         );
 
         setCanRetakeAssessment(attemptCheck.canAttempt);

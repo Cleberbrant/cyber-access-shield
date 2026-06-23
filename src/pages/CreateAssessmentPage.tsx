@@ -31,6 +31,7 @@ import {
   sanitizeInput,
 } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
+import { parseMaxAttempts } from "@/utils/assessment-utils";
 
 type QuestionType =
   | "multiple_choice"
@@ -349,10 +350,8 @@ export default function CreateAssessmentPage() {
       return;
     }
 
-    // 0 = tentativas ilimitadas. Usar `|| 1` aqui converteria 0 em 1 (0 é falsy),
-    // por isso tratamos NaN explicitamente e preservamos o 0.
-    const parsedMaxAttempts = Number.parseInt(maxAttempts, 10);
-    const safeMaxAttempts = Number.isNaN(parsedMaxAttempts) ? 1 : parsedMaxAttempts;
+    // 0 = tentativas ilimitadas (preservado); vazio/NaN = 1. Ver parseMaxAttempts.
+    const safeMaxAttempts = parseMaxAttempts(maxAttempts);
 
     if (questions.length === 0) {
       toast({
