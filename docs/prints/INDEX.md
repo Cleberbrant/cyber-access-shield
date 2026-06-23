@@ -80,17 +80,26 @@ Confirma a contagem de **126 testes**. Para cobertura: `npm run test:coverage`.
 
 > A própria impossibilidade de captura digital cobre o tópico **"Proteção de captura de tela"**.
 
-## 5. CHECKLIST — ainda faltam (externos / opcionais)
+Variantes recortadas só com a notificação (úteis se quiser a notificação isolada):
+`17-desktop-menu-contexto-toast.jpg`, `18-desktop-copiar-colar-toast.jpg`.
+
+## 5. Externos / web (capturados automatizados)
+
+| Arquivo | Conteúdo |
+|---|---|
+| `19-sonarcloud-overview.png` | SonarCloud Overview — Quality Gate **Passed**, 190 issues, 2% duplicação, **61,9% cobertura** (projeto público) |
+| `20-devtools-warning.png` | Aviso **"Ferramentas de Desenvolvedor Detectadas"** na tela de login (web) |
+
+## 6. CHECKLIST — status
 
 - [x] **Modalidade desktop (Electron / kiosk)** → `15-desktop-kiosk-prova.jpg`
-- [x] **Proteção de captura de tela** → evidenciada pela captura digital bloqueada (fotos 15-18)
+- [x] **Proteção de captura de tela** → captura digital bloqueada (fotos 15-18)
 - [x] **Bloqueio de monitores secundários** → `16-desktop-monitor-secundario-bloqueado.jpg`
-- [ ] **Aviso de DevTools** — abrir DevTools (F12) durante a prova e fotografar o overlay
-      ([src/components/DevToolsWarning.tsx](../../src/components/DevToolsWarning.tsx)).
+- [x] **Aviso de DevTools** → `20-devtools-warning.png`
+- [x] **SonarCloud** → `19-sonarcloud-overview.png`
 - [ ] **Gabarito server-side** — sem tela própria. Sugestão: print do código da função
       `submit_and_grade_assessment` (gabarito nunca sai do servidor) + tela de
       Resultado (`12-aluno-result.png`).
-- [ ] **SonarCloud** — print do dashboard (Quality Gate **Passed**, cobertura). Já está verde.
 - [ ] **Resultados dos testes com usuários (formulário)** — print das respostas do
       Google Forms (protocolo de pesquisa aluno/professor).
 
