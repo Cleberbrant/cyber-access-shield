@@ -63,25 +63,34 @@ Confirma a contagem de **126 testes**. Para cobertura: `npm run test:coverage`.
 
 ---
 
-## 4. CHECKLIST — prints que precisam ser capturados manualmente
+## 4. Prints do app desktop (Electron) — capturados por câmera
 
-Não dá pra automatizar via navegador headless (são recursos de SO no app Electron
-empacotado ou serviços externos com login). Capturar no app desktop empacotado
-(`npm run build:desktop` → `.exe` portátil):
+> **Metodologia:** durante a prova no app desktop, a captura digital de tela
+> (PrintScreen / gravação / snipping) é **bloqueada** pela proteção de conteúdo
+> (`setContentProtection`, [electron/kiosk.ts](../../electron/kiosk.ts)) — retorna
+> imagem preta. Por isso estas telas foram **fotografadas por câmera externa**, o que
+> por si só **evidencia a proteção de captura funcionando**. App versão 1.0.1.
 
-- [ ] **Modalidade desktop (Electron / kiosk)** — abrir o `.exe`, fotografar a janela
-      em tela cheia/kiosk durante uma prova. Código: `electron/kiosk.ts`, `electron/main.ts`.
-- [ ] **Proteção de captura de tela** — demonstrar tela preta/bloqueada ao tentar
-      print/gravação no app. Código: `electron/kiosk.ts` (`setContentProtection`).
-- [ ] **Bloqueio de monitores secundários** — fotografar o aviso quando há 2+ monitores.
-      Código: `electron/kiosk.ts` / `electron/security.ts`.
-- [ ] **Aviso de DevTools** — abrir DevTools durante a prova e fotografar o overlay
-      (`src/components/DevToolsWarning.tsx`).
-- [ ] **Gabarito server-side** — é correção no servidor (não tem tela própria).
-      Sugestão: print do código da função de correção / consulta SQL, ou da tela de
-      Resultado (`12-aluno-result.png`) citando que a nota vem do back-end.
-- [ ] **SonarCloud** — login no SonarCloud e print do dashboard do projeto
-      (Quality Gate, cobertura, issues).
+| Arquivo | Recurso demonstrado |
+|---|---|
+| `15-desktop-kiosk-prova.jpg` | Prova em **modo kiosk** (tela cheia travada, janela nativa Electron) |
+| `16-desktop-monitor-secundario-bloqueado.jpg` | **Bloqueio de monitor secundário** ("Este monitor está bloqueado durante a prova") |
+| `17-desktop-menu-contexto-bloqueado.jpg` | **Menu de contexto** (botão direito) desativado na prova |
+| `18-desktop-copiar-colar-bloqueado.jpg` | **Copiar/colar/recortar** desativados na prova |
+
+> A própria impossibilidade de captura digital cobre o tópico **"Proteção de captura de tela"**.
+
+## 5. CHECKLIST — ainda faltam (externos / opcionais)
+
+- [x] **Modalidade desktop (Electron / kiosk)** → `15-desktop-kiosk-prova.jpg`
+- [x] **Proteção de captura de tela** → evidenciada pela captura digital bloqueada (fotos 15-18)
+- [x] **Bloqueio de monitores secundários** → `16-desktop-monitor-secundario-bloqueado.jpg`
+- [ ] **Aviso de DevTools** — abrir DevTools (F12) durante a prova e fotografar o overlay
+      ([src/components/DevToolsWarning.tsx](../../src/components/DevToolsWarning.tsx)).
+- [ ] **Gabarito server-side** — sem tela própria. Sugestão: print do código da função
+      `submit_and_grade_assessment` (gabarito nunca sai do servidor) + tela de
+      Resultado (`12-aluno-result.png`).
+- [ ] **SonarCloud** — print do dashboard (Quality Gate **Passed**, cobertura). Já está verde.
 - [ ] **Resultados dos testes com usuários (formulário)** — print das respostas do
       Google Forms (protocolo de pesquisa aluno/professor).
 
