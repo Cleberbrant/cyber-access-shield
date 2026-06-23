@@ -1,20 +1,20 @@
 
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth-form";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
+import { ArrowLeft, CheckCircle, Lock, Shield } from "lucide-react";
 import { ensureJavaScriptEnabled } from "@/utils/secure-utils";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     // Verificar se o JavaScript está habilitado
     ensureJavaScriptEnabled();
-    
+
     // Verificar se o usuário já está autenticado usando Supabase
     const checkAuthStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -22,15 +22,15 @@ export default function RegisterPage() {
         navigate("/dashboard");
       }
     };
-    
+
     checkAuthStatus();
   }, [navigate]);
-  
+
   return (
     <>
       {/* Aviso para quando JavaScript está desabilitado */}
       <noscript>
-        <div 
+        <div
           id="js-disabled-warning"
           className="fixed inset-0 bg-background z-50 flex items-center justify-center p-4"
         >
@@ -49,37 +49,71 @@ export default function RegisterPage() {
           </div>
         </div>
       </noscript>
-      
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-16 items-center justify-between">
-            <Button 
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2"
+
+      <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
+        {/* Painel de marca (somente desktop) */}
+        <div className="relative hidden lg:flex flex-col justify-between overflow-hidden border-r border-border bg-background p-12">
+          <div className="absolute inset-0 grid-pattern" aria-hidden="true" />
+          <div className="absolute -top-40 -left-40 h-[28rem] w-[28rem] rounded-full bg-primary/15 blur-3xl" aria-hidden="true" />
+          <div className="absolute -bottom-40 -right-40 h-[28rem] w-[28rem] rounded-full bg-accent/15 blur-3xl" aria-hidden="true" />
+
+          <div className="relative z-10">
+            <Logo size={32} />
+          </div>
+
+          <div className="relative z-10 max-w-md space-y-8 animate-fade-in-up">
+            <h1 className="text-3xl font-display font-bold leading-tight tracking-tight">
+              Plataforma de avaliação segura para ambientes EAD
+            </h1>
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3 text-muted-foreground">
+                <CheckCircle className="h-5 w-5 shrink-0 text-primary" />
+                <span>Ambiente anti-fraude monitorado</span>
+              </li>
+              <li className="flex items-center gap-3 text-muted-foreground">
+                <Shield className="h-5 w-5 shrink-0 text-primary" />
+                <span>Bloqueio de DevTools e capturas</span>
+              </li>
+              <li className="flex items-center gap-3 text-muted-foreground">
+                <Lock className="h-5 w-5 shrink-0 text-primary" />
+                <span>Modo desktop com kiosk total</span>
+              </li>
+            </ul>
+          </div>
+
+          <p className="relative z-10 text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
+          </p>
+        </div>
+
+        {/* Coluna do formulário */}
+        <div className="flex min-h-screen flex-col">
+          <div className="flex items-center justify-between p-4 sm:p-6">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Shield className="h-6 w-6 text-cyber-blue" />
-              <span className="font-bold text-xl">CyberAccessShield</span>
-            </Button>
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao início
+            </Link>
             <ThemeToggle />
           </div>
-        </header>
-        
-        <main className="flex-1">
-          <div className="container flex items-center justify-center min-h-[calc(100vh-8rem)]">
-            <div className="w-full max-w-md p-4 sm:p-8">
+
+          <main className="flex flex-1 items-center justify-center p-4 sm:p-8">
+            <div className="w-full max-w-md animate-fade-in-up">
+              <div className="mb-8 flex justify-center lg:hidden">
+                <Logo size={28} />
+              </div>
               <AuthForm type="register" />
             </div>
-          </div>
-        </main>
-        
-        <footer className="border-t py-6">
-          <div className="container">
+          </main>
+
+          <footer className="p-4 sm:p-6 lg:hidden">
             <p className="text-center text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} CyberAccessShield. Todos os direitos reservados.
             </p>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     </>
   );

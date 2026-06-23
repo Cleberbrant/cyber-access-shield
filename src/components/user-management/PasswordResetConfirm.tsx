@@ -46,7 +46,9 @@ export function PasswordResetConfirm({
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>⚠️ Resetar Senha?</AlertDialogTitle>
+          <AlertDialogTitle className="font-display">
+            ⚠️ Resetar Senha?
+          </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3">
             <p>Você está prestes a resetar a senha de:</p>
             <p className="font-semibold text-foreground">{userEmail}</p>

@@ -17,48 +17,60 @@ export function FraudStatsCard({ stats }: FraudStatsCardProps) {
   const maxCount = topEvents[0]?.[1] || 1;
 
   return (
-    <Card className="border-2 border-cyber-blue/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-cyber-blue" />
+    <Card className="cyber-glass border-primary/20">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 font-display text-base">
+          <BarChart3 className="h-5 w-5 text-primary" />
           Estatísticas Gerais
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-secondary/50 rounded-lg p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="rounded-lg border border-border/60 bg-secondary/40 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
                 Total de Logs
               </span>
-              <AlertTriangle className="h-4 w-4 text-cyber-blue" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-destructive/10 text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold">{stats.total_logs}</p>
+            <p className="font-display text-2xl font-bold">
+              {stats.total_logs}
+            </p>
           </div>
 
-          <div className="bg-secondary/50 rounded-lg p-4">
+          <div className="rounded-lg border border-border/60 bg-secondary/40 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
                 Alunos Flagged
               </span>
-              <Users className="h-4 w-4 text-cyber-teal" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Users className="h-4 w-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold">{stats.total_students_flagged}</p>
+            <p className="font-display text-2xl font-bold">
+              {stats.total_students_flagged}
+            </p>
           </div>
 
-          <div className="bg-secondary/50 rounded-lg p-4">
+          <div className="rounded-lg border border-border/60 bg-secondary/40 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Avaliações</span>
-              <FileText className="h-4 w-4 text-cyber-purple" />
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                Avaliações
+              </span>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent">
+                <FileText className="h-4 w-4" />
+              </div>
             </div>
-            <p className="text-2xl font-bold">
+            <p className="font-display text-2xl font-bold">
               {stats.total_assessments_with_logs}
             </p>
           </div>
         </div>
 
         <div>
-          <h4 className="font-semibold mb-3 text-sm">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Tipos de Eventos Mais Frequentes
           </h4>
           <div className="space-y-3">
@@ -76,11 +88,16 @@ export function FraudStatsCard({ stats }: FraudStatsCardProps) {
                       <span className="font-medium">
                         {formatEventType(eventType)}
                       </span>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Badge
+                        variant="secondary"
+                        className="font-mono text-xs tabular-nums"
+                      >
+                        {count}
+                      </Badge>
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-cyber-blue to-cyber-teal transition-all duration-300"
+                        className="h-full bg-gradient-brand transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>

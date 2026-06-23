@@ -11,6 +11,7 @@ import { ConfirmPasswordInput } from "./auth-form/ConfirmPasswordInput";
 import { AuthFormFooter } from "./auth-form/AuthFormFooter";
 import { TurnstileWidget } from "./auth-form/TurnstileWidget";
 import { detectDevTools } from "@/utils/secure-utils";
+import { isElectron } from "@/utils/electron";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -35,6 +36,10 @@ interface AuthFormProps {
   type: "login" | "register";
   className?: string;
 }
+
+// Turnstile só roda em produção web (deploy). Em desenvolvimento (web ou
+// desktop) e no Electron empacotado, a validação de robô é dispensada.
+const skipTurnstile = isElectron() || import.meta.env.DEV;
 
 export function AuthForm({ type, className }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
@@ -254,7 +259,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
     e.preventDefault();
     setErrors({});
     if (!validateForm()) return;
-    if (!turnstileToken) {
+    if (!skipTurnstile && !turnstileToken) {
       setErrors({ form: "Confirme que você não é um robô antes de continuar." });
       return;
     }
@@ -274,19 +279,19 @@ export function AuthForm({ type, className }: AuthFormProps) {
   };
 
   return (
-    <Card className={cn("w-full max-w-md border-slate-200 shadow-md", className)}>
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold">
+    <Card className={cn("w-full max-w-md cyber-glass shadow-lg", className)}>
+      <CardHeader className="space-y-2 pb-4">
+        <CardTitle className="text-2xl font-display font-bold tracking-tight">
           {type === "login" ? "Entrar" : "Criar Conta"}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-muted-foreground">
           {type === "login"
             ? "Entre com seu email e senha para acessar sua conta"
             : "Preencha suas informações para criar uma nova conta"}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5">
           <EmailInput
             email={email}
             setEmail={setEmail}
@@ -315,11 +320,13 @@ export function AuthForm({ type, className }: AuthFormProps) {
             />
           )}
 
-          <TurnstileWidget
-            onSuccess={(token) => setTurnstileToken(token)}
-            onExpire={() => setTurnstileToken(null)}
-            onError={() => setTurnstileToken(null)}
-          />
+          {!skipTurnstile && (
+            <TurnstileWidget
+              onSuccess={(token) => setTurnstileToken(token)}
+              onExpire={() => setTurnstileToken(null)}
+              onError={() => setTurnstileToken(null)}
+            />
+          )}
 
           {errors.form && (
             <div className="rounded-md bg-destructive/15 p-3 space-y-2">

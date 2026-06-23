@@ -1,0 +1,104 @@
+erDiagram
+    profiles ||--o{ assessments : "cria (created_by)"
+    profiles ||--o{ assessment_sessions : "realiza (user_id)"
+    profiles ||--o{ security_logs : "gera (user_id)"
+    profiles ||--o{ user_management_logs : "admin (admin_id)"
+    profiles ||--o{ user_management_logs : "alvo (target_user_id)"
+    assessments ||--o{ questions : "contem"
+    assessments ||--o{ assessment_sessions : "possui"
+    assessments ||--o{ security_logs : "monitora"
+    assessment_sessions ||--o{ user_answers : "registra"
+    assessment_sessions ||--o{ security_logs : "monitora"
+    questions ||--o{ user_answers : "respondida_em"
+
+    profiles {
+        uuid id PK
+        text full_name
+        text display_name
+        text avatar_url
+        boolean is_admin
+        boolean is_active
+        text temp_password
+        timestamptz temp_password_created_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    assessments {
+        uuid id PK
+        text title
+        text description
+        int duration_minutes
+        int max_attempts
+        timestamptz available_from
+        uuid created_by FK
+        boolean is_active
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    questions {
+        uuid id PK
+        uuid assessment_id FK
+        text question_text
+        text question_type
+        jsonb options
+        text correct_answer
+        int points
+        int order_index
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    assessment_sessions {
+        uuid id PK
+        uuid assessment_id FK
+        uuid user_id FK
+        timestamptz started_at
+        timestamptz completed_at
+        numeric score
+        boolean is_completed
+        boolean is_cancelled
+        text cancellation_reason
+        int warning_count
+        int current_question_index
+        int time_elapsed_seconds
+        jsonb security_violations
+        timestamptz last_activity_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    user_answers {
+        uuid id PK
+        uuid session_id FK
+        uuid question_id FK
+        text answer
+        boolean is_correct
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    security_logs {
+        uuid id PK
+        uuid user_id FK
+        uuid assessment_id FK
+        uuid session_id FK
+        text event_type
+        text event_details
+        text user_agent
+        inet ip_address
+        timestamptz created_at
+    }
+
+    user_management_logs {
+        uuid id PK
+        uuid admin_id FK
+        text admin_email
+        uuid target_user_id FK
+        text target_user_email
+        text action
+        jsonb old_value
+        jsonb new_value
+        timestamptz created_at
+    }

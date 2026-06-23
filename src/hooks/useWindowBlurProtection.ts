@@ -3,6 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logSecurityEvent, SecurityEventType } from "@/utils/secure-utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { isElectron } from "@/utils/electron";
 
 /**
  * Hook para detectar quando aluno sai da aba/janela durante avaliação
@@ -30,6 +31,7 @@ export function useWindowBlurProtection(
   const blurTimeoutId = useRef<NodeJS.Timeout | null>(null);
   const continuousIntervalId = useRef<NodeJS.Timeout | null>(null);
   const isCurrentlyBlurred = useRef<boolean>(false);
+  const lastElectronViolation = useRef<number>(0);
 
   // Carregar contador de avisos do banco ao montar
   useEffect(() => {
@@ -85,7 +87,7 @@ export function useWindowBlurProtection(
         if (newWarningCount === 1) {
           // PRIMEIRO AVISO
           toast({
-            title: "⚠️ Primeiro Aviso",
+            title: "Primeiro aviso",
             description:
               "Detectamos que você saiu da aba da prova. Permaneça na aba para continuar.",
             variant: "destructive",
@@ -94,7 +96,7 @@ export function useWindowBlurProtection(
         } else if (newWarningCount === 2) {
           // SEGUNDO AVISO (mais severo)
           toast({
-            title: "⛔ Segundo Aviso - ATENÇÃO",
+            title: "Segundo aviso — atenção",
             description:
               "Segunda violação detectada! Uma terceira violação cancelará sua prova automaticamente.",
             variant: "destructive",
@@ -148,7 +150,7 @@ export function useWindowBlurProtection(
 
         // Mostrar toast final
         toast({
-          title: "🚫 Avaliação Cancelada",
+          title: "Avaliação cancelada",
           description:
             "Sua avaliação foi cancelada devido a múltiplas violações de segurança.",
           variant: "destructive",
@@ -259,11 +261,29 @@ export function useWindowBlurProtection(
     window.addEventListener("blur", handleWindowBlur);
     window.addEventListener("focus", handleWindowFocus);
 
+    // Desktop (Electron): o processo main refoca a janela imediatamente
+    // após o blur, então o timer de 5s acima nunca dispararia. A violação
+    // é contada NA HORA via evento do main, com throttle anti-burst para
+    // não acumular múltiplas violações num único desvio de foco.
+    let unsubscribeElectron: (() => void) | undefined;
+    if (isElectron()) {
+      unsubscribeElectron = window.electronAPI?.onSecurityEvent((event) => {
+        if (event.type !== "WINDOW_BLUR_ELECTRON") return;
+        const now = Date.now();
+        if (now - lastElectronViolation.current < 4000) return;
+        lastElectronViolation.current = now;
+        handleBlurViolation(
+          "Desktop: foco desviado da janela da prova (Alt+Tab/segundo monitor)"
+        );
+      });
+    }
+
     // Cleanup
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleWindowBlur);
       window.removeEventListener("focus", handleWindowFocus);
+      unsubscribeElectron?.();
 
       // Limpar todos os timers
       cancelBlurDetection();

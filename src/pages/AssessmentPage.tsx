@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { SecureAppShell } from "@/components/secure-app-shell";
 import {
@@ -118,7 +118,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (loading) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
@@ -136,7 +136,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (loadError || !assessment) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
@@ -168,7 +168,7 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
 
   if (!sessionId) {
     return (
-      <SecureAppShell>
+      <SecureAppShell layout="focus">
         <div className="container py-8">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-center">
@@ -189,14 +189,16 @@ handleSubmitAssessment(answers, assessment.questions, true); // autoSubmit = tru
   }
 
   return (
-    <SecureAppShell>
-      <div className="container py-8">
+    <SecureAppShell layout="focus">
+      <div className="mx-auto w-full max-w-3xl px-4 py-8">
         <AssessmentHeader
           title={assessment.title}
           description={assessment.description}
           timeLeft={formatTimeLeft()}
           currentQuestion={currentQuestionIndex}
           totalQuestions={assessment.questions.length}
+          timeLeftSeconds={timeLeft}
+          totalSeconds={(duration || 1) * 60}
         />
 
         <Card className="mb-6 secure-content no-select">

@@ -7,14 +7,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Clock,
   Calendar,
   Pencil,
   Trash2,
   Eye,
-  CheckCircle,
+  RotateCcw,
 } from "lucide-react";
 import { formatDate } from "@/utils/date-utils";
 import {
@@ -62,57 +61,73 @@ export function AssessmentCard({
 
   // Para alunos, verificar se pode tentar
   const currentAttempts = assessment.currentAttempts || 0;
-  const maxAttempts = assessment.max_attempts || 1;
+  const maxAttempts = assessment.max_attempts ?? 1; // 0 = ilimitadas (não cair no || 1)
   const canAttempt = maxAttempts === 0 || currentAttempts < maxAttempts;
 
+  // Status visual do card (apenas apresentação)
+  const isScheduled = !available && !!assessment.available_from;
+  const isExhausted = !isAdmin && available && !canAttempt;
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle>{assessment.title}</CardTitle>
-          {!available && assessment.available_from && (
-            <Badge variant="secondary" className="ml-2">
-              Em {timeInfo?.formattedTime}
-            </Badge>
+    <Card className="flex flex-col border-border bg-card transition-colors hover:border-primary/40">
+      <CardHeader className="space-y-3">
+        <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest">
+          {isScheduled ? (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="text-accent">Agendada</span>
+            </>
+          ) : isExhausted ? (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+              <span className="text-muted-foreground">Esgotada</span>
+            </>
+          ) : (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-slow" />
+              <span className="text-primary">Disponível</span>
+            </>
           )}
         </div>
-        <CardDescription>
-          <div className="flex items-center text-sm">
-            <Calendar className="mr-1 h-3 w-3" />
-            Criada em {formatDate(assessment.created_at)}
-          </div>
+        <CardTitle className="font-display text-lg leading-snug tracking-tight">
+          {assessment.title}
+        </CardTitle>
+        <CardDescription className="line-clamp-3">
+          {assessment.description || "Sem descrição"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
-          {assessment.description || "Sem descrição"}
-        </p>
-
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center">
-            <Clock className="mr-1 h-4 w-4" />
-            {assessment.duration_minutes} minutos
+      <CardContent className="flex-1">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 font-mono text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            {assessment.duration_minutes} min
           </div>
 
           {!isAdmin && maxAttempts > 0 && (
-            <div className="flex items-center">
-              <CheckCircle className="mr-1 h-4 w-4" />
-              Tentativas: {currentAttempts}/{maxAttempts}
+            <div className="flex items-center gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5" />
+              {currentAttempts}/{maxAttempts} tentativas
             </div>
           )}
 
           {!isAdmin && maxAttempts === 0 && (
-            <div className="flex items-center">
-              <CheckCircle className="mr-1 h-4 w-4" />
-              Tentativas: Ilimitadas
+            <div className="flex items-center gap-1.5">
+              <RotateCcw className="h-3.5 w-3.5" />
+              tentativas ilimitadas
             </div>
           )}
+
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            {formatDate(assessment.created_at)}
+          </div>
         </div>
 
         {!available && assessment.available_from && (
-          <div className="mt-3 p-2 bg-muted rounded text-xs">
+          <div className="mt-4 rounded-md border border-accent/20 bg-accent/10 px-3 py-2 text-xs text-accent">
             Disponível a partir de{" "}
             {formatAvailabilityDate(assessment.available_from)}
+            {timeInfo ? ` (em ${timeInfo.formattedTime})` : ""}
           </div>
         )}
       </CardContent>

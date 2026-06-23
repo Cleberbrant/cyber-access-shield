@@ -1,0 +1,7 @@
+{
+  "enabledMcpjsonServers": [
+    "supabase",
+    "vercel",
+    "cloudflare"
+  ]
+}

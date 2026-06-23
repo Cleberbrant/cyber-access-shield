@@ -1,62 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#1e3a5f"/>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="55%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
     </linearGradient>
-    <linearGradient id="shield-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#3b82f6"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
-    </linearGradient>
+    <radialGradient id="glow-cyan" cx="0.2" cy="0.15" r="0.6">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#22D3EE" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-violet" cx="0.85" cy="0.9" r="0.6">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#1e2535" stroke-width="1"/>
+    </pattern>
   </defs>
 
-  <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="#07090F"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow-cyan)"/>
+  <rect width="1200" height="630" fill="url(#glow-violet)"/>
 
-  <!-- Subtle grid lines -->
-  <line x1="0" y1="210" x2="1200" y2="210" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
-  <line x1="0" y1="420" x2="1200" y2="420" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
-  <line x1="400" y1="0" x2="400" y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
-  <line x1="800" y1="0" x2="800" y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
-
-  <!-- Shield icon -->
-  <g transform="translate(120, 185)">
-    <path d="M130 20 L220 55 L220 130 C220 175 178 210 130 232 C82 210 40 175 40 130 L40 55 Z"
-          fill="url(#shield-grad)" stroke="#1e40af" stroke-width="3"/>
-    <!-- Lock body -->
-    <rect x="88" y="125" width="84" height="62" rx="10" fill="white" opacity="0.95"/>
-    <!-- Lock shackle -->
-    <path d="M100 125 L100 105 Q100 80 130 80 Q160 80 160 105 L160 125"
-          stroke="white" stroke-width="13" stroke-linecap="round" fill="none" opacity="0.95"/>
-    <!-- Keyhole -->
-    <circle cx="130" cy="153" r="11" fill="#3b82f6"/>
-    <rect x="125" y="160" width="10" height="16" rx="3" fill="#3b82f6"/>
+  <!-- Escudo central -->
+  <g transform="translate(508, 120) scale(5.75)">
+    <path d="M16 2.5 L27 7 V15.5 C27 22.5 22.5 27.5 16 29.5 C9.5 27.5 5 22.5 5 15.5 V7 Z" stroke="url(#brand)" stroke-width="2" stroke-linejoin="round" fill="none"/>
+    <path d="M10.5 16.5 L14 20 L21.5 11.5" stroke="url(#brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <circle cx="21.5" cy="11.5" r="1.6" fill="url(#brand)"/>
   </g>
 
-  <!-- Title -->
-  <text x="380" y="268" font-family="system-ui, -apple-system, sans-serif"
-        font-size="72" font-weight="700" fill="white" letter-spacing="-1">
-    CyberAccess
-  </text>
-  <text x="380" y="348" font-family="system-ui, -apple-system, sans-serif"
-        font-size="72" font-weight="700" fill="#3b82f6" letter-spacing="-1">
-    Shield
-  </text>
+  <text x="600" y="400" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="64" font-weight="700" fill="#F1F5F9">CyberAccess<tspan fill="url(#brand)">Shield</tspan></text>
+  <text x="600" y="455" text-anchor="middle" font-family="'Segoe UI', system-ui, sans-serif" font-size="28" fill="#94A3B8">Plataforma de avaliação segura para ambientes EAD</text>
 
-  <!-- Subtitle -->
-  <text x="380" y="410" font-family="system-ui, -apple-system, sans-serif"
-        font-size="30" fill="#94a3b8" letter-spacing="0">
-    Plataforma de avaliação segura para ambientes EAD
-  </text>
-
-  <!-- Bottom bar -->
-  <rect x="0" y="560" width="1200" height="70" fill="#3b82f6" opacity="0.15"/>
-  <text x="380" y="603" font-family="system-ui, -apple-system, sans-serif"
-        font-size="24" fill="#64748b">
-    cyber-access-shield.vercel.app
-  </text>
-
-  <!-- Decorative circles -->
-  <circle cx="1100" cy="100" r="120" fill="#3b82f6" opacity="0.05"/>
-  <circle cx="1050" cy="530" r="80" fill="#3b82f6" opacity="0.07"/>
+  <rect x="500" y="500" width="200" height="3" rx="1.5" fill="url(#brand)"/>
 </svg>

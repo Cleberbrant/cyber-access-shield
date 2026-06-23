@@ -218,6 +218,15 @@ export default function Dashboard() {
     navigate(`/assessment-result/${assessmentId}`);
   };
 
+  // Estatísticas derivadas da lista já carregada (sem novas queries)
+  const totalAssessments = assessments.length;
+  const availableNowCount = assessments.filter((a) =>
+    isAssessmentAvailable(a.available_from),
+  ).length;
+  const scheduledCount = assessments.filter(
+    (a) => a.available_from && !isAssessmentAvailable(a.available_from),
+  ).length;
+
   const confirmDeleteAssessment = async () => {
     if (!assessmentToDelete) return;
 
@@ -238,36 +247,84 @@ export default function Dashboard() {
   return (
     <SecureAppShell>
       <div className="container py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              {isUserAdmin
-                ? "Gerencie e crie avaliações seguras para seus alunos."
-                : "Participe de avaliações e acompanhe seu desempenho."}
-            </p>
-          </div>
-
-          {isUserAdmin && (
-            <div className="flex gap-3 mt-4 sm:mt-0">
-              <Button variant="outline" onClick={() => navigate("/fraud-logs")}>
-                <Shield className="mr-2 h-4 w-4" />
-                Logs
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/user-management")}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Usuários
-              </Button>
-              <Button onClick={() => navigate("/create-assessment")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Avaliação
-              </Button>
+        <div className="mb-10 animate-fade-up">
+          <p className="font-mono text-xs uppercase tracking-widest text-primary mb-2">
+            {isUserAdmin ? "// painel do administrador" : "// painel do aluno"}
+          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-display text-3xl font-bold tracking-tighter">
+                Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {isUserAdmin
+                  ? "Gerencie e crie avaliações seguras para seus alunos."
+                  : "Participe de avaliações e acompanhe seu desempenho."}
+              </p>
             </div>
-          )}
+
+            {isUserAdmin && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => navigate("/fraud-logs")}
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Logs
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground"
+                  onClick={() => navigate("/user-management")}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Usuários
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/create-assessment")}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Avaliação
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
+
+        {isUserAdmin && !loading && (
+          <div className="mb-10 overflow-hidden rounded-xl border border-border animate-fade-up">
+            <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Total de avaliações
+                </p>
+                <p className="font-display text-3xl font-bold tracking-tight mt-1">
+                  {totalAssessments}
+                </p>
+              </div>
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Disponíveis agora
+                </p>
+                <p className="font-display text-3xl font-bold tracking-tight mt-1 text-primary">
+                  {availableNowCount}
+                </p>
+              </div>
+              <div className="p-5">
+                <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                  Agendadas
+                </p>
+                <p className="font-display text-3xl font-bold tracking-tight mt-1">
+                  {scheduledCount}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <AssessmentsList
           assessments={assessments}

@@ -21,21 +21,19 @@ export function ActivateButton({
   };
 
   return (
-    <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+    <Card className="border-amber-500/30 bg-amber-500/10">
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-semibold text-amber-900 dark:text-amber-100">
+            <p className="font-semibold text-amber-200">
               Esta conta está INATIVA
             </p>
-            <p className="text-sm text-amber-700 dark:text-amber-300">
-              {userEmail}
-            </p>
+            <p className="font-mono text-sm text-amber-300/80">{userEmail}</p>
           </div>
           <Button
             onClick={handleActivate}
             disabled={isToggling}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-emerald-600 text-white hover:bg-emerald-500"
           >
             <CheckCircle2 className="mr-2 h-4 w-4" />
             {isToggling ? "Reativando..." : "Reativar Conta"}

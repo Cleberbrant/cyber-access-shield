@@ -1,5 +1,4 @@
-
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface QuestionNavigationProps {
   currentQuestion: number;
@@ -9,30 +8,43 @@ interface QuestionNavigationProps {
   onQuestionChange: (index: number) => void;
 }
 
-export function QuestionNavigation({ 
-  currentQuestion, 
-  totalQuestions, 
-  answers, 
+export function QuestionNavigation({
+  currentQuestion,
+  totalQuestions,
+  answers,
   questionsMap,
-  onQuestionChange 
+  onQuestionChange,
 }: QuestionNavigationProps) {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-medium mb-2">Navegação rápida:</h3>
+      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+        Navegação rápida
+      </h3>
       <div className="flex flex-wrap gap-2">
-        {Array.from({ length: totalQuestions }, (_, index) => (
-          <Button
-            key={index}
-            variant={index === currentQuestion ? "default" : 
-                   answers[questionsMap[index]] ? "outline" : "ghost"}
-            size="sm"
-            onClick={() => onQuestionChange(index)}
-            className={index === currentQuestion ? "" : 
-                    answers[questionsMap[index]] ? "border-primary/50" : "border-dashed"}
-          >
-            {index + 1}
-          </Button>
-        ))}
+        {Array.from({ length: totalQuestions }, (_, index) => {
+          const isCurrent = index === currentQuestion;
+          const isAnswered = Boolean(answers[questionsMap[index]]);
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => onQuestionChange(index)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-md border text-sm font-medium transition-colors",
+                isCurrent &&
+                  "border-primary bg-primary/10 text-primary ring-2 ring-primary/40",
+                !isCurrent &&
+                  isAnswered &&
+                  "border-primary/40 bg-primary text-primary-foreground",
+                !isCurrent &&
+                  !isAnswered &&
+                  "border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              )}
+            >
+              {index + 1}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

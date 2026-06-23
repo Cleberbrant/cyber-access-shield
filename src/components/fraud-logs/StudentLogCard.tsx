@@ -20,18 +20,18 @@ export function StudentLogCard({ studentLogs }: StudentLogCardProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <Card className="border-l-4 border-l-cyber-blue">
+    <Card className="border-l-4 border-l-primary bg-secondary/30">
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CardHeader>
+        <CardHeader className="py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1">
-              <User className="h-5 w-5 text-cyber-blue" />
+              <User className="h-4 w-4 text-primary" />
               <div>
-                <CardTitle className="text-lg">
+                <CardTitle className="text-sm font-medium">
                   {studentLogs.student_email}
                 </CardTitle>
                 {studentLogs.student_name && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {studentLogs.student_name}
                   </p>
                 )}
@@ -39,7 +39,10 @@ export function StudentLogCard({ studentLogs }: StudentLogCardProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <Badge variant="destructive" className="flex items-center gap-1">
+              <Badge
+                variant="destructive"
+                className="flex items-center gap-1 font-mono text-xs"
+              >
                 <AlertCircle className="h-3 w-3" />
                 {studentLogs.total_violations} violações
               </Badge>
@@ -62,8 +65,8 @@ export function StudentLogCard({ studentLogs }: StudentLogCardProps) {
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="pt-0">
+            <div className="space-y-2">
               {studentLogs.logs.map((log) => (
                 <LogEventCard key={log.id} log={log} />
               ))}

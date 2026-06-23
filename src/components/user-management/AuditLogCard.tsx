@@ -32,38 +32,42 @@ export function AuditLogCard({ log }: AuditLogCardProps) {
   const getActionColor = () => {
     switch (log.action) {
       case "edit_role":
-        return "text-purple-600 bg-purple-50 dark:bg-purple-950/20";
+        return "text-accent bg-accent/10";
       case "reset_password":
       case "self_password_change":
-        return "text-blue-600 bg-blue-50 dark:bg-blue-950/20";
+        return "text-primary bg-primary/10";
       case "deactivate":
-        return "text-red-600 bg-red-50 dark:bg-red-950/20";
+        return "text-destructive bg-destructive/10";
       case "activate":
-        return "text-green-600 bg-green-50 dark:bg-green-950/20";
+        return "text-emerald-400 bg-emerald-500/10";
       default:
-        return "text-gray-600 bg-gray-50 dark:bg-gray-950/20";
+        return "text-muted-foreground bg-secondary";
     }
   };
 
   const ActionIcon = getActionIcon();
 
   return (
-    <Card>
+    <Card className="cyber-glass">
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
-          <div className={`rounded-full p-2 ${getActionColor()}`}>
-            <ActionIcon className="h-5 w-5" />
+          <div className={`rounded-md p-2 ${getActionColor()}`}>
+            <ActionIcon className="h-4 w-4" />
           </div>
 
           <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between">
               <div>
-                <p className="font-semibold">{translateAction(log.action)}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-semibold">
+                  {translateAction(log.action)}
+                </p>
+                <p className="font-mono text-xs text-muted-foreground">
                   {formatDate(log.created_at)}
                 </p>
               </div>
-              <Badge variant="outline">{translateAction(log.action)}</Badge>
+              <Badge variant="outline" className="text-xs">
+                {translateAction(log.action)}
+              </Badge>
             </div>
 
             <div className="space-y-1 text-sm">

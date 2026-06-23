@@ -89,17 +89,17 @@ export default function FraudLogsPage() {
 
             {/* Tabs de navegação */}
             <Tabs defaultValue="assessments" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0">
                 <TabsTrigger
                   value="assessments"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   <FileText className="h-4 w-4" />
                   Por Avaliação
                 </TabsTrigger>
                 <TabsTrigger
                   value="general"
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 rounded-none border-b-2 border-transparent bg-transparent px-1 pb-3 data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
                 >
                   <AlertCircle className="h-4 w-4" />
                   Logs Gerais
@@ -109,10 +109,10 @@ export default function FraudLogsPage() {
               {/* Tab: Por Avaliação */}
               <TabsContent value="assessments" className="mt-6">
                 {assessmentLogs.length === 0 ? (
-                  <Card>
+                  <Card className="cyber-glass">
                     <CardContent className="flex flex-col items-center justify-center py-12">
                       <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-xl font-semibold mb-1">
+                      <h3 className="font-display text-xl font-semibold mb-1">
                         Nenhum log de avaliação encontrado
                       </h3>
                       <p className="text-muted-foreground text-center max-w-md">
@@ -121,7 +121,7 @@ export default function FraudLogsPage() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {assessmentLogs.map((assessment) => (
                       <AssessmentLogCard
                         key={assessment.assessment_id}
