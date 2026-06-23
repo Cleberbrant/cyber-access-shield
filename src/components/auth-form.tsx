@@ -97,6 +97,9 @@ export function AuthForm({ type, className }: AuthFormProps) {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       });
       if (error) {
         toast({
@@ -193,6 +196,7 @@ export function AuthForm({ type, className }: AuthFormProps) {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/login`,
           data: {
             full_name: email.split('@')[0],
             avatar_url: "",
