@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { formatDate } from "@/utils/date-utils";
+import { resolveMaxAttempts } from "@/utils/assessment-utils";
 import {
   isAssessmentAvailable,
   formatAvailabilityDate,
@@ -61,7 +62,7 @@ export function AssessmentCard({
 
   // Para alunos, verificar se pode tentar
   const currentAttempts = assessment.currentAttempts || 0;
-  const maxAttempts = assessment.max_attempts ?? 1; // 0 = ilimitadas (não cair no || 1)
+  const maxAttempts = resolveMaxAttempts(assessment.max_attempts); // 0 = ilimitadas
   const canAttempt = maxAttempts === 0 || currentAttempts < maxAttempts;
 
   // Status visual do card (apenas apresentação)

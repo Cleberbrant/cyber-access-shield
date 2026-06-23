@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
 import { Assessment, AssessmentQuestion } from "@/types/assessment";
+import { resolveMaxAttempts } from "@/utils/assessment-utils";
 import {
   loadSessionProgress,
   isSessionTimeExpired,
@@ -138,7 +139,7 @@ export function useAssessmentLoader(
           description: assessmentData.description || "",
           duration: duration,
           questions: formattedQuestions,
-          maxAttempts: assessmentData.max_attempts ?? 1, // 0 = ilimitadas
+          maxAttempts: resolveMaxAttempts(assessmentData.max_attempts),
           availableFrom: assessmentData.available_from || null,
         };
 
