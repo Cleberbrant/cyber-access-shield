@@ -1,0 +1,59 @@
+erDiagram
+    profiles ||--o{ assessment_sessions : "realiza"
+    profiles ||--o{ security_logs : "gera_evento"
+    profiles ||--o{ user_management_logs : "executa_acao"
+    assessments ||--o{ assessment_sessions : "avaliada_em"
+    assessments ||--o{ security_logs : "contexto"
+    assessment_sessions ||--o{ security_logs : "produz"
+
+    profiles {
+        uuid id PK
+        text full_name
+        text display_name
+        boolean is_admin
+        boolean is_active
+    }
+
+    assessments {
+        uuid id PK
+        text title
+        int duration_minutes
+        boolean is_active
+    }
+
+    assessment_sessions {
+        uuid id PK
+        uuid assessment_id FK
+        uuid user_id FK
+        boolean is_cancelled
+        text cancellation_reason
+        int warning_count
+        jsonb security_violations
+        timestamptz last_activity_at
+        timestamptz started_at
+        timestamptz completed_at
+    }
+
+    security_logs {
+        uuid id PK
+        uuid user_id FK
+        uuid assessment_id FK
+        uuid session_id FK
+        text event_type
+        text event_details
+        text user_agent
+        inet ip_address
+        timestamptz created_at
+    }
+
+    user_management_logs {
+        uuid id PK
+        uuid admin_id FK
+        text admin_email
+        uuid target_user_id FK
+        text target_user_email
+        text action
+        jsonb old_value
+        jsonb new_value
+        timestamptz created_at
+    }
