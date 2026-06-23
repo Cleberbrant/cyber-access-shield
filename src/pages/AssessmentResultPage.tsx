@@ -221,14 +221,14 @@ setResult({
           cancellationReason: sessionData.cancellation_reason || undefined,
           warningCount: sessionData.warning_count || 0,
           attemptNumber,
-          maxAttempts: assessmentData.max_attempts || 1,
+          maxAttempts: assessmentData.max_attempts ?? 1, // 0 = ilimitadas
           questionsResults,
         });
         // Verificar se o usuário pode refazer a avaliação
         const attemptCheck = await canAttemptAssessment(
           user.id,
           assessmentId,
-          assessmentData.max_attempts || 1
+          assessmentData.max_attempts ?? 1
         );
 
         setCanRetakeAssessment(attemptCheck.canAttempt);

@@ -138,7 +138,7 @@ export function useAssessmentLoader(
           description: assessmentData.description || "",
           duration: duration,
           questions: formattedQuestions,
-          maxAttempts: assessmentData.max_attempts || 1,
+          maxAttempts: assessmentData.max_attempts ?? 1, // 0 = ilimitadas
           availableFrom: assessmentData.available_from || null,
         };
 

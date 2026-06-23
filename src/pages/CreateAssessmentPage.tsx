@@ -349,6 +349,11 @@ export default function CreateAssessmentPage() {
       return;
     }
 
+    // 0 = tentativas ilimitadas. Usar `|| 1` aqui converteria 0 em 1 (0 é falsy),
+    // por isso tratamos NaN explicitamente e preservamos o 0.
+    const parsedMaxAttempts = Number.parseInt(maxAttempts, 10);
+    const safeMaxAttempts = Number.isNaN(parsedMaxAttempts) ? 1 : parsedMaxAttempts;
+
     if (questions.length === 0) {
       toast({
         title: "Erro",
@@ -387,7 +392,7 @@ export default function CreateAssessmentPage() {
             title,
             description,
             duration_minutes: Number.parseInt(duration),
-            max_attempts: Number.parseInt(maxAttempts) || 1,
+            max_attempts: safeMaxAttempts,
             available_from: availableFromTimestamp,
           })
           .eq("id", assessmentId);
@@ -406,7 +411,7 @@ export default function CreateAssessmentPage() {
             title,
             description,
             duration_minutes: Number.parseInt(duration),
-            max_attempts: Number.parseInt(maxAttempts) || 1,
+            max_attempts: safeMaxAttempts,
             available_from: availableFromTimestamp,
             created_by: user.id,
           })

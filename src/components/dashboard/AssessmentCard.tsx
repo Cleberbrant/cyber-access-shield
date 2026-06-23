@@ -61,7 +61,7 @@ export function AssessmentCard({
 
   // Para alunos, verificar se pode tentar
   const currentAttempts = assessment.currentAttempts || 0;
-  const maxAttempts = assessment.max_attempts || 1;
+  const maxAttempts = assessment.max_attempts ?? 1; // 0 = ilimitadas (não cair no || 1)
   const canAttempt = maxAttempts === 0 || currentAttempts < maxAttempts;
 
   // Status visual do card (apenas apresentação)
