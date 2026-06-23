@@ -66,11 +66,6 @@ export function UserRow({ user, isCurrentUser, onEdit }: UserRowProps) {
         {formatShortDate(user.created_at)}
       </td>
 
-      {/* Último acesso */}
-      <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
-        {formatShortDate(user.last_sign_in_at)}
-      </td>
-
       {/* Ações */}
       <td className="px-4 py-2.5">
         <Button
