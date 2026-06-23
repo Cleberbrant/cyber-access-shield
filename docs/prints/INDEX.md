@@ -89,6 +89,7 @@ Variantes recortadas só com a notificação (úteis se quiser a notificação i
 |---|---|
 | `19-sonarcloud-overview.png` | SonarCloud Overview — Quality Gate **Passed**, 190 issues, 2% duplicação, **61,9% cobertura** (projeto público) |
 | `20-devtools-warning.png` | Aviso **"Ferramentas de Desenvolvedor Detectadas"** na tela de login (web) |
+| `21-gabarito-server-side.png` | Código da função `submit_and_grade_assessment` — correção no servidor, gabarito nunca sai do banco |
 
 ## 6. CHECKLIST — status
 
@@ -97,11 +98,9 @@ Variantes recortadas só com a notificação (úteis se quiser a notificação i
 - [x] **Bloqueio de monitores secundários** → `16-desktop-monitor-secundario-bloqueado.jpg`
 - [x] **Aviso de DevTools** → `20-devtools-warning.png`
 - [x] **SonarCloud** → `19-sonarcloud-overview.png`
-- [ ] **Gabarito server-side** — sem tela própria. Sugestão: print do código da função
-      `submit_and_grade_assessment` (gabarito nunca sai do servidor) + tela de
-      Resultado (`12-aluno-result.png`).
+- [x] **Gabarito server-side** → `21-gabarito-server-side.png` (+ tela de Resultado `12-aluno-result.png`)
 - [ ] **Resultados dos testes com usuários (formulário)** — print das respostas do
-      Google Forms (protocolo de pesquisa aluno/professor).
+      Google Forms (protocolo de pesquisa aluno/professor). *(único pendente — só você tem acesso)*
 
 ---
 
